@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "201074102687",
+    "project_id": "workout-tracker-javelin",
+    "storage_bucket": "workout-tracker-javelin.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201074102687:android:0223f460f7e10fc72fadaa",
+        "android_client_info": {
+          "package_name": "com.example.javelin_workout_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAS9an4iG0Kk3AFIiS8uJi_rXBgGFJJ3ic"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
