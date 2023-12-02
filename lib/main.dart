@@ -1,7 +1,12 @@
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:javelin_workout_tracker/firebase_options.dart';
-import 'package:javelin_workout_tracker/pages/auth_page.dart';
+import 'package:javelin_workout_tracker/pages/auth_pages/auth_page.dart';
+import 'package:javelin_workout_tracker/pages/home_page.dart';
+import 'package:javelin_workout_tracker/pages/main_view.dart';
+import 'package:javelin_workout_tracker/pages/overview_page.dart';
 // import 'package:javelin_workout_tracker/pages/home_page.dart';
 // import 'package:javelin_workout_tracker/pages/login_page.dart';
 
@@ -16,9 +21,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      theme: ThemeData(
+        fontFamily: GoogleFonts.kdamThmorPro().fontFamily,
+      ),
       debugShowCheckedModeBanner: false,
-      home: AuthPage(),
+      home: MainView(),
     );
   }
 }

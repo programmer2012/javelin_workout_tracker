@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:javelin_workout_tracker/pages/login_page.dart';
-import 'package:javelin_workout_tracker/pages/register_page.dart';
+import 'package:javelin_workout_tracker/pages/auth_pages/login_page.dart';
+import 'package:javelin_workout_tracker/pages/auth_pages/register_page.dart';
 
 class LoginOrRegisterPage extends StatefulWidget {
   const LoginOrRegisterPage({super.key});
@@ -16,7 +16,7 @@ class _LoginOrRegisterPageState extends State<LoginOrRegisterPage> {
   // toggle between login and register page
   void togglePages() {
     setState(() {
-      showLoginPage = true;
+      showLoginPage = !showLoginPage;
     });
   }
 

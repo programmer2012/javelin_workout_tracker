@@ -69,6 +69,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '201074102687',
     projectId: 'workout-tracker-javelin',
     storageBucket: 'workout-tracker-javelin.appspot.com',
+    iosClientId: '201074102687-end4q5ul0m08vpquvi11d7l8vtajkvrd.apps.googleusercontent.com',
     iosBundleId: 'com.example.javelinWorkoutTracker',
   );
 }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:javelin_workout_tracker/services/auth_service.dart';
 import 'package:javelin_workout_tracker/services/firestore.dart';
 
 class HomePage extends StatefulWidget {
@@ -57,18 +58,20 @@ class _HomePageState extends State<HomePage> {
   // user logout method
   void signUserOut() {
     FirebaseAuth.instance.signOut();
+    AuthService().signOutWithUser();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.deepPurple,
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Notes von'),
             Text(
-              'Hans Peter',
+              user.email!,
               style: TextStyle(fontSize: 10),
             ),
           ],

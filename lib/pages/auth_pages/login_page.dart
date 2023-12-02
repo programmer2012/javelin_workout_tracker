@@ -3,22 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/my_button.dart';
 import 'package:javelin_workout_tracker/components/my_textfield.dart';
 import 'package:javelin_workout_tracker/components/square_tile.dart';
+import 'package:javelin_workout_tracker/services/auth_service.dart';
 
-class RegisterPage extends StatefulWidget {
+class LoginPage extends StatefulWidget {
   final Function()? onTap;
-  const RegisterPage({super.key, required this.onTap});
+  const LoginPage({
+    super.key,
+    required this.onTap,
+  });
 
   @override
-  State<RegisterPage> createState() => RegisterPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class RegisterPageState extends State<RegisterPage> {
+class _LoginPageState extends State<LoginPage> {
   // text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // sign user up method
-  void signUserUp() async {
+  // sign user in method
+  void signUserIn() async {
     showDialog(
       context: context,
       builder: (context) {
@@ -28,18 +32,16 @@ class RegisterPageState extends State<RegisterPage> {
       },
     );
 
-    // creating the user
+    // try sign in
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
       // pop the loading circle
-      // ignore: use_build_context_synchronously
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       // pop the loading circle
-      // ignore: use_build_context_synchronously
       Navigator.pop(context);
       // Wrong email
       errorMessage(e.code);
@@ -65,11 +67,11 @@ class RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Scaffold(
-        backgroundColor: Colors.grey[300],
-        body: SafeArea(
-          child: Center(
+    return Scaffold(
+      backgroundColor: Colors.grey[300],
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -109,15 +111,6 @@ class RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 10),
 
-                // confirm password textfield
-                MyTextField(
-                  controller: passwordController,
-                  hintText: 'Confirm Password',
-                  obscureText: true,
-                ),
-
-                const SizedBox(height: 10),
-
                 // forgot password?
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -138,7 +131,7 @@ class RegisterPageState extends State<RegisterPage> {
 
                 // sign in button
                 MyButton(
-                  onTap: signUserUp,
+                  onTap: signUserIn,
                 ),
 
                 const SizedBox(height: 50.0),
@@ -174,16 +167,14 @@ class RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 40.0),
 
                 // google + apple sign in buttons
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // google button
-                    SquareTile(imgPath: 'lib/images/google.png'),
-
-                    SizedBox(width: 25.0),
-
-                    // apple button
-                    SquareTile(imgPath: 'lib/images/apple.png')
+                    SquareTile(
+                      imgPath: 'lib/images/google.png',
+                      onTap: () => AuthService().signInWithGoogle(),
+                    ),
                   ],
                 ),
 
@@ -195,7 +186,7 @@ class RegisterPageState extends State<RegisterPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Already hav an account',
+                      'Not a member?',
                       style: TextStyle(
                         color: Colors.grey[700],
                       ),
@@ -206,7 +197,7 @@ class RegisterPageState extends State<RegisterPage> {
                     GestureDetector(
                       onTap: widget.onTap,
                       child: const Text(
-                        'Login now!',
+                        'Register now!',
                         style: TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,

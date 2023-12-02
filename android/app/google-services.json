@@ -12,7 +12,12 @@
           "package_name": "com.example.javelin_workout_tracker"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "201074102687-bgv9vqp8m5e3epjudpcd4ip9j2pi2ala.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAS9an4iG0Kk3AFIiS8uJi_rXBgGFJJ3ic"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "201074102687-bgv9vqp8m5e3epjudpcd4ip9j2pi2ala.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "201074102687-end4q5ul0m08vpquvi11d7l8vtajkvrd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.javelinWorkoutTracker"
+              }
+            }
+          ]
         }
       }
     }
