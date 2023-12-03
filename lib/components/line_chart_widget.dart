@@ -309,6 +309,16 @@ class LineChartSample1State extends State<LineChartSample1> {
         _dropdownValue = selectedValue;
       });
     }
+    if (('Body Weight' == selectedValue || 'Bench' == selectedValue)) {
+      setState(() {
+        isShowingMainData = true;
+      });
+    } else if (('Deadlifts' == selectedValue ||
+        'Leg Extension' == selectedValue)) {
+      setState(() {
+        isShowingMainData = false;
+      });
+    }
   }
 
   @override

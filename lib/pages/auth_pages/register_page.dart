@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/my_button.dart';
 import 'package:javelin_workout_tracker/components/my_textfield.dart';
 import 'package:javelin_workout_tracker/components/square_tile.dart';
+import 'package:javelin_workout_tracker/models/user.dart' as model;
 import 'package:javelin_workout_tracker/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -18,59 +19,9 @@ class RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final usernameControler = TextEditingController();
 
   // sign user up method
-  void signUserUp() async {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-
-    // creating the user
-    try {
-      // check if passwords are the same
-      if (passwordController.text == confirmPasswordController.text) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
-      } else {
-        // show error message, passwords don't match
-        errorMessage("Passwords don' match!");
-      }
-
-      // pop the loading circle
-      // ignore: use_build_context_synchronously
-      Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
-      // pop the loading circle
-      // ignore: use_build_context_synchronously
-      Navigator.pop(context);
-      // Wrong email
-      errorMessage(e.code);
-    }
-  }
-
-  // error message
-  void errorMessage(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Center(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.deepPurple),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +33,7 @@ class RegisterPageState extends State<RegisterPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
 
                 // logo
                 const Icon(
@@ -99,6 +50,14 @@ class RegisterPageState extends State<RegisterPage> {
                 ),
 
                 const SizedBox(height: 25),
+
+                MyTextField(
+                  controller: usernameControler,
+                  hintText: 'Username',
+                  obscureText: false,
+                ),
+
+                const SizedBox(height: 10),
 
                 // email textfield
                 MyTextField(
@@ -125,14 +84,23 @@ class RegisterPageState extends State<RegisterPage> {
                   obscureText: true,
                 ),
 
-                const SizedBox(height: 52),
+                const SizedBox(height: 30),
 
                 // sign in button
                 MyButton(
-                  onTap: signUserUp,
+                  onTap: () async {
+                    String res = await AuthService().signUserUp(
+                      username: usernameControler.text,
+                      email: emailController.text,
+                      password: passwordController.text,
+                      passwordConfirm: confirmPasswordController.text,
+                    );
+                    print(res);
+                  },
+                  name: 'Sign Up',
                 ),
 
-                const SizedBox(height: 50.0),
+                const SizedBox(height: 30.0),
 
                 // or continue with
                 Padding(
@@ -162,7 +130,7 @@ class RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
 
-                const SizedBox(height: 40.0),
+                const SizedBox(height: 30.0),
 
                 // google + apple sign in buttons
                 Row(
@@ -176,7 +144,7 @@ class RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
 
-                const SizedBox(height: 40.0),
+                const SizedBox(height: 30.0),
 
                 // not a member? register now
 

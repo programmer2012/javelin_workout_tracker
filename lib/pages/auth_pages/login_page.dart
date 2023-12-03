@@ -20,6 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   // text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final usernameControler = TextEditingController();
 
   // sign user in method
   void signUserIn() async {
@@ -75,15 +76,15 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
 
                 // logo
                 const Icon(
                   Icons.lock,
-                  size: 100,
+                  size: 75,
                 ),
 
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
 
                 // welcome back, you've been missed!
                 Text(
@@ -92,6 +93,15 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 const SizedBox(height: 25),
+
+                // username textfield
+                MyTextField(
+                  controller: usernameControler,
+                  hintText: 'Username',
+                  obscureText: true,
+                ),
+
+                const SizedBox(height: 10),
 
                 // email textfield
                 MyTextField(
@@ -132,9 +142,10 @@ class _LoginPageState extends State<LoginPage> {
                 // sign in button
                 MyButton(
                   onTap: signUserIn,
+                  name: 'Sign In',
                 ),
 
-                const SizedBox(height: 50.0),
+                const SizedBox(height: 30.0),
 
                 // or continue with
                 Padding(
