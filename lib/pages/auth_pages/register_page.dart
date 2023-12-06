@@ -1,9 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/my_button.dart';
 import 'package:javelin_workout_tracker/components/my_textfield.dart';
 import 'package:javelin_workout_tracker/components/square_tile.dart';
-import 'package:javelin_workout_tracker/models/user.dart' as model;
+// import 'package:javelin_workout_tracker/models/user.dart' as model;
 import 'package:javelin_workout_tracker/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -139,7 +138,8 @@ class RegisterPageState extends State<RegisterPage> {
                     // google button
                     SquareTile(
                       imgPath: 'lib/images/google.png',
-                      onTap: () => AuthService().signInWithGoogle(),
+                      onTap: () =>
+                          AuthService().signInWithGoogle(firstLogin: true),
                     ),
                   ],
                 ),

@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:javelin_workout_tracker/pages/add_workout_page.dart';
 import 'package:javelin_workout_tracker/pages/home_page.dart';
 import 'package:javelin_workout_tracker/pages/overview_page.dart';
 
@@ -13,19 +16,43 @@ class MainView extends StatefulWidget {
 }
 
 class _MainViewState extends State<MainView> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  var userData = {};
   int currentIndex = 0;
-  final screens = [
-    OverviewPage(),
-    HomePage(),
-    HomePage(),
-    HomePage(),
-    LineChartPage(
-      isShowingMainData: false,
-    ),
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    getData();
+  }
+
+  getData() async {
+    try {
+      var snap = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .get();
+      userData = snap.data()!;
+      setState(() {});
+    } catch (e) {
+      print('fehler');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      OverviewPage(
+        userData: userData,
+      ),
+      const HomePage(),
+      const AddWorkoutPage(),
+      const HomePage(),
+      const LineChartPage(
+        isShowingMainData: false,
+      ),
+    ];
     return Scaffold(
       backgroundColor: Colors.deepPurple,
       body: screens[currentIndex],

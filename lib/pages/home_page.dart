@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:javelin_workout_tracker/services/auth_service.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:javelin_workout_tracker/services/firestore.dart';
 
 class HomePage extends StatefulWidget {
@@ -58,7 +58,8 @@ class _HomePageState extends State<HomePage> {
   // user logout method
   void signUserOut() {
     FirebaseAuth.instance.signOut();
-    AuthService().signOutWithUser();
+    GoogleSignIn().signOut();
+    // AuthService().signOutWithUser();
   }
 
   @override

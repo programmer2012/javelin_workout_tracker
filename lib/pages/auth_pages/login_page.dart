@@ -184,7 +184,8 @@ class _LoginPageState extends State<LoginPage> {
                     // google button
                     SquareTile(
                       imgPath: 'lib/images/google.png',
-                      onTap: () => AuthService().signInWithGoogle(),
+                      onTap: () =>
+                          AuthService().signInWithGoogle(firstLogin: false),
                     ),
                   ],
                 ),

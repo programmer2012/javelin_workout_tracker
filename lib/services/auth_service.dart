@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:javelin_workout_tracker/models/user.dart' as model;
+// import 'package:javelin_workout_tracker/models/user.dart' as model;
 
 class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -16,11 +15,12 @@ class AuthService {
   // AuthService(this.username, this.password, this.passwordConfirm, this.email,)
 
   // sign user up
-  Future<String> signUserUp(
-      {required String username,
-      required String email,
-      required String password,
-      required String passwordConfirm}) async {
+  Future<String> signUserUp({
+    required String username,
+    required String email,
+    required String password,
+    required String passwordConfirm,
+  }) async {
     String res = "Some error occurred";
     try {
       if (password == passwordConfirm &&
@@ -30,6 +30,9 @@ class AuthService {
         // register user
         UserCredential cred = await _auth.createUserWithEmailAndPassword(
             email: email, password: password);
+
+        // StoregeMethods().uploadImageToStorage('profilePics', file, false);
+
         // add user to database
         await _firestore.collection('users').doc(cred.user!.uid).set({
           'username': username,
@@ -110,7 +113,7 @@ class AuthService {
   // }
 
   // Google Sign In
-  signInWithGoogle() async {
+  Future<String> signInWithGoogle({required bool firstLogin}) async {
     // begin interactive sign in process
     final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();
 
@@ -124,10 +127,17 @@ class AuthService {
     );
 
     // finally, lets sign in
-    return await FirebaseAuth.instance.signInWithCredential(credential);
-  }
+    UserCredential cred =
+        await FirebaseAuth.instance.signInWithCredential(credential);
 
-  signOutWithUser() async {
-    await GoogleSignIn().signOut();
+    if (firstLogin) {
+      await _firestore.collection('users').doc(cred.user!.uid).set({
+        'username': cred.user!.displayName,
+        'uid': cred.user!.uid,
+        'email': cred.user!.email,
+      });
+    }
+
+    return 'User logged in with Google Auth';
   }
 }
