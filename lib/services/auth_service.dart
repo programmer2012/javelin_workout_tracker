@@ -38,6 +38,13 @@ class AuthService {
           'username': username,
           'uid': cred.user!.uid,
           'email': email,
+          'workoutList': [
+            {"id": 1, "name": "Bench Press", "isSelected": false},
+            {"id": 2, "name": "Pull Over", "isSelected": false},
+            {"id": 3, "name": "Squats", "isSelected": false},
+            {"id": 4, "name": "Cleans", "isSelected": false},
+            {"id": 5, "name": "Push Ups", "isSelected": false},
+          ],
         });
         res = 'success';
       }
@@ -135,6 +142,13 @@ class AuthService {
         'username': cred.user!.displayName,
         'uid': cred.user!.uid,
         'email': cred.user!.email,
+        'workoutList': [
+          {"id": 1, "name": "Bench Press", "isSelected": false},
+          {"id": 2, "name": "Pull Over", "isSelected": false},
+          {"id": 3, "name": "Squats", "isSelected": false},
+          {"id": 4, "name": "Cleans", "isSelected": false},
+          {"id": 5, "name": "Push Ups", "isSelected": false},
+        ]
       });
     }
 

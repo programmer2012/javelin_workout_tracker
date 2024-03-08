@@ -3,7 +3,9 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/pages/add_workout_page.dart';
+import 'package:javelin_workout_tracker/pages/comming_soon.dart';
 import 'package:javelin_workout_tracker/pages/home_page.dart';
+// import 'package:javelin_workout_tracker/pages/home_page.dart';
 import 'package:javelin_workout_tracker/pages/overview_page.dart';
 
 import '../components/line_chart_widget.dart';
@@ -46,8 +48,10 @@ class _MainViewState extends State<MainView> {
       OverviewPage(
         userData: userData,
       ),
-      const HomePage(),
-      const AddWorkoutPage(),
+      const CommingSoon(),
+      AddWorkoutPage(
+        userData: userData,
+      ),
       const HomePage(),
       const LineChartPage(
         isShowingMainData: false,
@@ -55,7 +59,9 @@ class _MainViewState extends State<MainView> {
     ];
     return Scaffold(
       backgroundColor: Colors.deepPurple,
-      body: screens[currentIndex],
+      body: userData.isNotEmpty
+          ? screens[currentIndex]
+          : const CircularProgressIndicator(),
       bottomNavigationBar: CurvedNavigationBar(
         height: 60,
         index: currentIndex,

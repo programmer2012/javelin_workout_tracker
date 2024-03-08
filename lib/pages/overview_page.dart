@@ -35,6 +35,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userData = widget.userData;
     return Scaffold(
       backgroundColor: Colors.deepPurple,
       body: SafeArea(
@@ -60,12 +61,12 @@ class _OverviewPageState extends State<OverviewPage> {
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 10),
                       child: Stack(children: [
-                        widget.userData['photoUrl'] != null
+                        userData['photoUrl'] != null
                             ? CircleAvatar(
                                 radius: 40,
                                 backgroundColor: Colors.deepPurple,
                                 backgroundImage:
-                                    NetworkImage(widget.userData['photoUrl']),
+                                    NetworkImage(userData['photoUrl']),
                               )
                             : const CircleAvatar(
                                 radius: 40,
@@ -92,7 +93,7 @@ class _OverviewPageState extends State<OverviewPage> {
                         margin: const EdgeInsets.symmetric(
                             vertical: 30, horizontal: 50),
                         child: Text(
-                          widget.userData['username'],
+                          userData['username'],
                           style: GoogleFonts.kdamThmorPro(
                               textStyle: const TextStyle(fontSize: 20)),
                         ))
