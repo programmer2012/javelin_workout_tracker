@@ -16,6 +16,43 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   Map isSelected = {};
   List exerciseWidgets = [];
 
+  deleteExercise() {
+    // todo add delete function with pop up
+    deletePopUp();
+    print('delete');
+  }
+
+  void deletePopUp() {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              title: const Text(
+                'Create a new exercise',
+                style: TextStyle(fontSize: 20),
+                textAlign: TextAlign.center,
+              ),
+              actionsAlignment: MainAxisAlignment.spaceBetween,
+              actions: [
+                MaterialButton(
+                  onPressed: () {},
+                  child: const Text('save'),
+                  color: Colors.green,
+                ),
+                MaterialButton(
+                  onPressed: cancel,
+                  child: const Text('cancel'),
+                  color: Colors.red,
+                )
+              ],
+            ));
+  }
+
+  void cancel() {
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,16 +69,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                toggleWorkout
+                exerciseWidgets.isNotEmpty
                     ? Container(
                         padding: EdgeInsets.symmetric(horizontal: 20),
-                        margin: EdgeInsets.symmetric(vertical: 20),
+                        margin: EdgeInsets.only(top: 20),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             color: Colors.grey.shade200),
-                        height: exerciseWidgets.length <= 7
-                            ? exerciseWidgets.length * 60
-                            : 500,
+                        height: 500,
                         child: ListView.builder(
                           itemCount: exerciseWidgets.length,
                           itemBuilder: (context, index) =>
@@ -61,13 +96,17 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                     print('main Page $isSelected');
                     isSelected.forEach((key, value) {
                       if (value) {
-                        exerciseWidgets.add(new ExerciseWidget(name: key));
+                        exerciseWidgets.add(ExerciseWidget(
+                          name: key,
+                          deleteExercise: () => deleteExercise(),
+                        ));
                       }
                     });
                     print(exerciseWidgets);
                     setState(() {});
                   },
                   child: Container(
+                    margin: EdgeInsets.only(top: 20),
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                     // margin: EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
