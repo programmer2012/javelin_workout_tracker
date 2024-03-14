@@ -4,10 +4,12 @@ import 'package:javelin_workout_tracker/components/new_set_widget.dart';
 class ExerciseWidget extends StatefulWidget {
   final String name;
   final Function deleteExercise;
+  final int index;
   const ExerciseWidget({
     super.key,
     required this.name,
     required this.deleteExercise,
+    required this.index,
   });
 
   @override
@@ -59,7 +61,7 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onDoubleTap: () => widget.deleteExercise,
+      onLongPress: () => widget.deleteExercise(),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 0),
         title: Text(widget.name),

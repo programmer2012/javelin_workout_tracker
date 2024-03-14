@@ -12,37 +12,30 @@ class AddWorkoutPage extends StatefulWidget {
 
 class _AddWorkoutPageState extends State<AddWorkoutPage> {
   bool toggleWorkout = true;
-  List workoutList = [];
   Map isSelected = {};
   List exerciseWidgets = [];
 
-  deleteExercise() {
-    // todo add delete function with pop up
-    deletePopUp();
-    print('delete');
-  }
-
-  void deletePopUp() {
+  deleteExercise(index) {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
               title: const Text(
-                'Create a new exercise',
+                'Delete this exercise?',
                 style: TextStyle(fontSize: 20),
                 textAlign: TextAlign.center,
               ),
               actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
                 MaterialButton(
-                  onPressed: () {},
-                  child: const Text('save'),
+                  onPressed: delete(index),
+                  child: const Text('yes'),
                   color: Colors.green,
                 ),
                 MaterialButton(
                   onPressed: cancel,
-                  child: const Text('cancel'),
+                  child: const Text('no'),
                   color: Colors.red,
                 )
               ],
@@ -51,6 +44,16 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 
   void cancel() {
     Navigator.pop(context);
+  }
+
+  delete(index) {
+    print("bevore $exerciseWidgets");
+    exerciseWidgets.removeAt(index);
+
+    print("after $exerciseWidgets");
+
+    Navigator.pop(context);
+    setState(() {});
   }
 
   @override
@@ -98,7 +101,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                       if (value) {
                         exerciseWidgets.add(ExerciseWidget(
                           name: key,
-                          deleteExercise: () => deleteExercise(),
+                          index: exerciseWidgets.length,
+                          deleteExercise: () =>
+                              deleteExercise(exerciseWidgets.length),
                         ));
                       }
                     });
