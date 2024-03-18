@@ -15,7 +15,11 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   Map isSelected = {};
   List exerciseWidgets = [];
 
+  // todo deleteExercise isnt working
+
   deleteExercise(index) {
+    // print(exerciseWidgets[index]["name"]);
+
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -29,13 +33,13 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
               actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
                 MaterialButton(
-                  onPressed: delete(index),
-                  child: const Text('yes'),
+                  onPressed: () => exerciseWidgets.removeAt(index),
+                  child: const Text('delete'),
                   color: Colors.green,
                 ),
                 MaterialButton(
                   onPressed: cancel,
-                  child: const Text('no'),
+                  child: const Text('cancel'),
                   color: Colors.red,
                 )
               ],
@@ -46,15 +50,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     Navigator.pop(context);
   }
 
-  delete(index) {
-    print("bevore $exerciseWidgets");
-    exerciseWidgets.removeAt(index);
+  // delete(index) {
+  //   print("bevore ${exerciseWidgets[index]['name']}");
+  //   exerciseWidgets.removeAt(index);
 
-    print("after $exerciseWidgets");
+  //   print("after $exerciseWidgets");
 
-    Navigator.pop(context);
-    setState(() {});
-  }
+  //   Navigator.pop(context);
+  //   setState(() {});
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +103,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                     print('main Page $isSelected');
                     isSelected.forEach((key, value) {
                       if (value) {
+                        print('length ${exerciseWidgets.length}');
                         exerciseWidgets.add(ExerciseWidget(
                           name: key,
                           index: exerciseWidgets.length,
