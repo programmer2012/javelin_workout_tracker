@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/new_set_widget.dart';
 
+// ignore: must_be_immutable
 class ExerciseWidget extends StatefulWidget {
   final String name;
   final Function deleteExercise;
-  final int index;
-  const ExerciseWidget({
-    super.key,
-    required this.name,
-    required this.deleteExercise,
-    required this.index,
-  });
+  int index;
+  List<NewSetWidget> setWidgetList;
+  ExerciseWidget(
+      {super.key,
+      required this.name,
+      required this.deleteExercise,
+      required this.index,
+      required this.setWidgetList});
 
   @override
   State<ExerciseWidget> createState() => _ExerciseWidgetState();
 }
 
 class _ExerciseWidgetState extends State<ExerciseWidget> {
-  List<NewSetWidget> setWidgetList = [];
-
   List<String> weight = [];
 
   List<String> reps = [];
@@ -26,9 +26,9 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
   addSet() {
     getWeightAndSets();
     setState(() {});
-    setWidgetList.add(
+    widget.setWidgetList.add(
       NewSetWidget(
-        index: setWidgetList.length,
+        index: widget.setWidgetList.length,
         // weightBevor: weight.isNotEmpty ? weight.last : '',
         // repsBevor: reps.isNotEmpty ? reps.last : '',
         weight:
@@ -36,11 +36,11 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
         reps: TextEditingController(text: reps.isNotEmpty ? reps.last : ''),
         onDelete: (int index) {
           setState(() {
-            setWidgetList.removeAt(index);
+            widget.setWidgetList.removeAt(index);
 
             // Update indexes
-            for (int i = index; i < setWidgetList.length; i++) {
-              setWidgetList[i].index = i;
+            for (int i = index; i < widget.setWidgetList.length; i++) {
+              widget.setWidgetList[i].index = i;
             }
           });
         },
@@ -49,11 +49,11 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
   }
 
   getWeightAndSets() {
-    for (var widget in setWidgetList) {
+    for (var widget in widget.setWidgetList) {
       weight.add(widget.weight.text);
     }
 
-    for (var widget in setWidgetList) {
+    for (var widget in widget.setWidgetList) {
       reps.add(widget.reps.text);
     }
   }
@@ -94,13 +94,13 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
             ),
           ),
           Container(
-            height: setWidgetList.length <= 3
-                ? (50 * setWidgetList.length).ceilToDouble()
+            height: widget.setWidgetList.length <= 3
+                ? (50 * widget.setWidgetList.length).ceilToDouble()
                 : 150,
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: setWidgetList.length,
-              itemBuilder: (context, index) => setWidgetList[index],
+              itemCount: widget.setWidgetList.length,
+              itemBuilder: (context, index) => widget.setWidgetList[index],
             ),
           ),
           TextButton(onPressed: addSet, child: const Text('Add Set'))

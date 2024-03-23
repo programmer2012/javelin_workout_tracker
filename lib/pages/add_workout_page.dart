@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:javelin_workout_tracker/components/count_up_timer_widget.dart';
 import 'package:javelin_workout_tracker/components/exercise_widget.dart';
 import 'package:javelin_workout_tracker/pages/choose_workout.dart';
+import 'package:stop_watch_timer/stop_watch_timer.dart';
 
 class AddWorkoutPage extends StatefulWidget {
   final Map<dynamic, dynamic> userData;
@@ -10,12 +12,16 @@ class AddWorkoutPage extends StatefulWidget {
   State<AddWorkoutPage> createState() => _AddWorkoutPageState();
 }
 
+// todo toogle timer isnt working
+
 class _AddWorkoutPageState extends State<AddWorkoutPage> {
   bool toggleWorkout = true;
   Map isSelected = {};
   List exerciseWidgets = [];
+  bool isStopped = false;
 
-  // todo deleteExercise isnt working
+  // Todo Stopwatch timer
+  final StopWatchTimer _stopWatchTimer = StopWatchTimer();
 
   deleteExercise(index) {
     // print(exerciseWidgets[index]["name"]);
@@ -33,12 +39,12 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
               actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
                 MaterialButton(
-                  onPressed: () => exerciseWidgets.removeAt(index),
+                  onPressed: () => delete(index),
                   child: const Text('delete'),
                   color: Colors.green,
                 ),
                 MaterialButton(
-                  onPressed: cancel,
+                  onPressed: () => cancel(index),
                   child: const Text('cancel'),
                   color: Colors.red,
                 )
@@ -46,19 +52,31 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
             ));
   }
 
-  void cancel() {
+  void cancel(index) {
+    print(index);
     Navigator.pop(context);
   }
 
-  // delete(index) {
-  //   print("bevore ${exerciseWidgets[index]['name']}");
-  //   exerciseWidgets.removeAt(index);
+  delete(index) {
+    exerciseWidgets.removeAt(index);
+    Navigator.pop(context);
+    setState(() {});
+    updateExerciseIndex();
+  }
 
-  //   print("after $exerciseWidgets");
+  updateExerciseIndex() {
+    for (int i = 0; i < exerciseWidgets.length; i++) {
+      exerciseWidgets[i].index = i;
+      print('${exerciseWidgets[i].name} ${exerciseWidgets[i].index}');
+    }
+    setState(() {});
+  }
 
-  //   Navigator.pop(context);
-  //   setState(() {});
-  // }
+  @override
+  void dispose() async {
+    super.dispose();
+    await _stopWatchTimer.dispose(); // Need to call dispose function.
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,10 +102,18 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                             borderRadius: BorderRadius.circular(10),
                             color: Colors.grey.shade200),
                         height: 500,
-                        child: ListView.builder(
-                          itemCount: exerciseWidgets.length,
-                          itemBuilder: (context, index) =>
-                              exerciseWidgets[index],
+                        child: Column(
+                          children: [
+                            CountUpTimer(),
+                            Container(
+                              height: 400,
+                              child: ListView.builder(
+                                itemCount: exerciseWidgets.length,
+                                itemBuilder: (context, index) =>
+                                    exerciseWidgets[index],
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     : Container(),
@@ -100,19 +126,18 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                 userData: widget.userData,
                               )),
                     );
-                    print('main Page $isSelected');
                     isSelected.forEach((key, value) {
                       if (value) {
-                        print('length ${exerciseWidgets.length}');
+                        int index = exerciseWidgets
+                            .length; // Index setzen auf aktuelle Länge der Liste
                         exerciseWidgets.add(ExerciseWidget(
                           name: key,
-                          index: exerciseWidgets.length,
-                          deleteExercise: () =>
-                              deleteExercise(exerciseWidgets.length),
+                          index: index, // Index setzen
+                          deleteExercise: () => deleteExercise(index),
+                          setWidgetList: [], // Hier wird der Index an deleteExercise übergeben
                         ));
                       }
                     });
-                    print(exerciseWidgets);
                     setState(() {});
                   },
                   child: Container(

@@ -183,7 +183,6 @@ class _ChooseWorkoutState extends State<ChooseWorkout> {
                 : Container(
                     width: 0,
                     height: 0,
-                    color: Colors.amber,
                   ),
             FloatingActionButton(
               heroTag: null,
