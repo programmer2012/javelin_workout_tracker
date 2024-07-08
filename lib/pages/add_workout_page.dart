@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/count_up_timer_widget.dart';
 import 'package:javelin_workout_tracker/components/exercise_widget.dart';
-import 'package:javelin_workout_tracker/models/exercise_data.dart';
-import 'package:javelin_workout_tracker/models/set_widget_data.dart';
+// import 'package:javelin_workout_tracker/models/exercise_data.dart';
+// import 'package:javelin_workout_tracker/models/set_widget_data.dart';
 import 'package:javelin_workout_tracker/pages/choose_workout.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 
@@ -81,10 +81,21 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
             ));
   }
 
-  void saveWorkoutAction() {}
+  void saveWorkoutAction() {
+    updateFirestore();
+    resetCurrentWorkout();
+    Navigator.pop(context);
+  }
 
   void cancelSaveWorkoutAction() {
     Navigator.pop(context);
+  }
+
+  void resetCurrentWorkout() {
+    _firestore
+        .collection('users')
+        .doc(_auth.currentUser!.uid)
+        .update({'currentWorkout': {}});
   }
 
   void updateFirestore() {
@@ -200,11 +211,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                           name: key,
                           index: index, // Index setzen
                           deleteExercise: () => deleteExercise(index),
-                          setWidgetList: [], // Hier wird der Index an deleteExercise übergeben
+                          setWidgetList: [],
+                          updateFirestore:
+                              updateFirestore, // Hier wird der Index an deleteExercise übergeben
                         ));
                       }
                     });
                     setState(() {});
+                    updateFirestore();
                     // print(exerciseWidgets[0]);
                   },
                   child: Container(

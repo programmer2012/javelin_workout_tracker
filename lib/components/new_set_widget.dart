@@ -8,6 +8,7 @@ class NewSetWidget extends StatelessWidget {
   // final String weightBevor;
   // final String repsBevor;
   final Function onDelete;
+  final Function updateFirestore;
 
   NewSetWidget({
     super.key,
@@ -17,10 +18,14 @@ class NewSetWidget extends StatelessWidget {
     required this.onDelete,
     required this.reps,
     required this.weight,
+    required this.updateFirestore,
   });
 
   @override
   Widget build(BuildContext context) {
+    // adding listeners to the TextEditingControllers
+    reps.addListener(() => updateFirestore());
+    weight.addListener(() => updateFirestore());
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[

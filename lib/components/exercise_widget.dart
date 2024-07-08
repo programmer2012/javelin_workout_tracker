@@ -5,14 +5,17 @@ import 'package:javelin_workout_tracker/components/new_set_widget.dart';
 class ExerciseWidget extends StatefulWidget {
   final String name;
   final Function deleteExercise;
+  final Function updateFirestore;
   int index;
   List<NewSetWidget> setWidgetList;
-  ExerciseWidget(
-      {super.key,
-      required this.name,
-      required this.deleteExercise,
-      required this.index,
-      required this.setWidgetList});
+  ExerciseWidget({
+    super.key,
+    required this.name,
+    required this.deleteExercise,
+    required this.index,
+    required this.setWidgetList,
+    required this.updateFirestore,
+  });
 
   @override
   State<ExerciseWidget> createState() => _ExerciseWidgetState();
@@ -33,8 +36,6 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
     widget.setWidgetList.add(
       NewSetWidget(
         index: widget.setWidgetList.length,
-        // weightBevor: weight.isNotEmpty ? weight.last : '',
-        // repsBevor: reps.isNotEmpty ? reps.last : '',
         weight:
             TextEditingController(text: weight.isNotEmpty ? weight.last : ''),
         reps: TextEditingController(text: reps.isNotEmpty ? reps.last : ''),
@@ -48,12 +49,10 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
             }
           });
         },
+        updateFirestore: widget.updateFirestore,
       ),
     );
-    // widget.setWidgetList.forEach((element) {
-    //   print(element.reps.text);
-    //   print(element.weight.text);
-    // });
+    widget.updateFirestore();
   }
 
   getWeightAndSets() {
