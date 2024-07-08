@@ -37,6 +37,7 @@ class _ChooseWorkoutState extends State<ChooseWorkout> {
   void initState() {
     super.initState();
     userData = widget.userData;
+    print(userData);
     idList = [];
     _exercises = userData['workoutList'];
     _foundExercises = _exercises;
@@ -62,7 +63,6 @@ class _ChooseWorkoutState extends State<ChooseWorkout> {
     setState(() {
       _foundExercises = results;
     });
-    print('foundExercises $_foundExercises');
   }
 
   // text controller
@@ -85,8 +85,6 @@ class _ChooseWorkoutState extends State<ChooseWorkout> {
     }
 
     setState(() {});
-
-    print(idList);
   }
 
   void addExercise() {
@@ -131,12 +129,20 @@ class _ChooseWorkoutState extends State<ChooseWorkout> {
   void save() {
     // get exercise name from text controller
     String newExerciseName = exerciseNameControler.text;
+    bool nameExist =
+        _exercises.any((exercise) => exercise['name'] == newExerciseName);
 
-    if (newExerciseName.isNotEmpty) {
+    if (newExerciseName.isNotEmpty && !nameExist) {
       _exercises.add({
         "id": _exercises.length + 1,
+        "isSelected": false,
         'name': newExerciseName,
+        "sets": [],
       });
+    } else if (newExerciseName.isEmpty) {
+      throw Exception('Textfield is empty');
+    } else if (nameExist) {
+      throw Exception('Exercise already exists');
     }
 
     isSelected[newExerciseName] = false;
@@ -160,10 +166,6 @@ class _ChooseWorkoutState extends State<ChooseWorkout> {
 
   @override
   Widget build(BuildContext context) {
-    print(userData);
-
-    print('while build foundExercises $_foundExercises');
-
     return Scaffold(
       floatingActionButton: Container(
         margin: EdgeInsets.fromLTRB(36.0, 0, 4, 0),

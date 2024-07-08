@@ -24,8 +24,12 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
   List<String> reps = [];
 
   addSet() {
+    weight.clear();
+    reps.clear();
+
     getWeightAndSets();
     setState(() {});
+
     widget.setWidgetList.add(
       NewSetWidget(
         index: widget.setWidgetList.length,
@@ -46,6 +50,10 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
         },
       ),
     );
+    // widget.setWidgetList.forEach((element) {
+    //   print(element.reps.text);
+    //   print(element.weight.text);
+    // });
   }
 
   getWeightAndSets() {

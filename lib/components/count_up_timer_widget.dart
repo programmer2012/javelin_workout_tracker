@@ -3,23 +3,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class CountUpTimer extends StatefulWidget {
-  const CountUpTimer({
-    super.key,
-  });
+  const CountUpTimer({super.key, getTim});
 
   @override
   State<CountUpTimer> createState() => _CountUpTimerState();
 }
 
 class _CountUpTimerState extends State<CountUpTimer> {
-  Duration duration = Duration();
+  Duration duration = const Duration();
   Timer? timer;
+  bool isPaused = false;
 
   @override
   void initState() {
     super.initState();
     startTimer();
   }
+
+  // getTime() {
+  //   return timer;
+  // }
 
   void addTime() {
     const addSeconds = 1;
@@ -32,7 +35,7 @@ class _CountUpTimerState extends State<CountUpTimer> {
   }
 
   void startTimer() {
-    timer = Timer.periodic(Duration(seconds: 1), (_) => addTime());
+    timer = Timer.periodic(const Duration(seconds: 1), (_) => addTime());
   }
 
   void stopTimer() {
@@ -42,6 +45,9 @@ class _CountUpTimerState extends State<CountUpTimer> {
   }
 
   void toggleFunction() {
+    setState(() {
+      isPaused = !isPaused;
+    });
     if (timer!.isActive) {
       stopTimer();
     } else {
@@ -49,7 +55,7 @@ class _CountUpTimerState extends State<CountUpTimer> {
     }
   }
 
-  // todo remove CENTER WIDGET
+  @override
   Widget build(BuildContext context) {
     return Center(child: Container(child: buildTime()));
   }
@@ -74,6 +80,10 @@ class _CountUpTimerState extends State<CountUpTimer> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Icon(
+                isPaused ? Icons.play_arrow : Icons.pause,
+                size: 20,
+              ),
               timeContainer(time: hours),
               Container(
                   padding: EdgeInsets.only(right: 1),

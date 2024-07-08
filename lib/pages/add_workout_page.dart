@@ -1,6 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/count_up_timer_widget.dart';
 import 'package:javelin_workout_tracker/components/exercise_widget.dart';
+import 'package:javelin_workout_tracker/models/exercise_data.dart';
+import 'package:javelin_workout_tracker/models/set_widget_data.dart';
 import 'package:javelin_workout_tracker/pages/choose_workout.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 
@@ -12,20 +16,18 @@ class AddWorkoutPage extends StatefulWidget {
   State<AddWorkoutPage> createState() => _AddWorkoutPageState();
 }
 
-// todo toogle timer isnt working
-
 class _AddWorkoutPageState extends State<AddWorkoutPage> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   bool toggleWorkout = true;
   Map isSelected = {};
   List exerciseWidgets = [];
+  List exerciseWidgetsArr = [];
   bool isStopped = false;
 
-  // Todo Stopwatch timer
   final StopWatchTimer _stopWatchTimer = StopWatchTimer();
 
   deleteExercise(index) {
-    // print(exerciseWidgets[index]["name"]);
-
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -50,6 +52,64 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                 )
               ],
             ));
+  }
+
+  void saveWorkout() {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              title: const Text(
+                'Sure you want to save and quit this workout?',
+                style: TextStyle(fontSize: 20),
+                textAlign: TextAlign.center,
+              ),
+              actionsAlignment: MainAxisAlignment.spaceBetween,
+              actions: [
+                MaterialButton(
+                  onPressed: saveWorkoutAction,
+                  child: const Text('save'),
+                  color: Colors.green,
+                ),
+                MaterialButton(
+                  onPressed: cancelSaveWorkoutAction,
+                  child: const Text('cancel'),
+                  color: Colors.red,
+                )
+              ],
+            ));
+  }
+
+  void saveWorkoutAction() {}
+
+  void cancelSaveWorkoutAction() {
+    Navigator.pop(context);
+  }
+
+  void updateFirestore() {
+    Map exercises = {};
+    // print(exerciseWidgets);
+    for (var element in exerciseWidgets) {
+      var widgetList = element.setWidgetList;
+      var name = element.name;
+
+      exercises['$name'] = {};
+      int setCount = 1;
+      widgetList.forEach((set) {
+        String setString = 'set$setCount';
+        exercises['$name']
+            ['$setString'] = {'reps': set.reps.text, 'weight': set.weight.text};
+        setCount++;
+      });
+    }
+    print(exercises);
+
+    setState(() {});
+    _firestore
+        .collection('users')
+        .doc(_auth.currentUser!.uid)
+        .update({'currentWorkout': exercises});
   }
 
   void cancel(index) {
@@ -113,6 +173,12 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                     exerciseWidgets[index],
                               ),
                             ),
+                            // TextButton(
+                            //     onPressed: updateFirestore,
+                            //     child: Text('Update Firestore')),
+                            TextButton(
+                                onPressed: saveWorkout,
+                                child: Text('Save Workout'))
                           ],
                         ),
                       )
@@ -139,6 +205,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                       }
                     });
                     setState(() {});
+                    // print(exerciseWidgets[0]);
                   },
                   child: Container(
                     margin: EdgeInsets.only(top: 20),
