@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/count_up_timer_widget.dart';
 import 'package:javelin_workout_tracker/components/exercise_widget.dart';
+import 'package:javelin_workout_tracker/components/new_set_widget.dart';
 // import 'package:javelin_workout_tracker/models/exercise_data.dart';
 // import 'package:javelin_workout_tracker/models/set_widget_data.dart';
 import 'package:javelin_workout_tracker/pages/choose_workout.dart';
@@ -22,8 +23,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   bool toggleWorkout = true;
   Map isSelected = {};
   List exerciseWidgets = [];
+  Map exerciseWidgetRaw = {};
   List exerciseWidgetsArr = [];
   bool isStopped = false;
+  List<NewSetWidget> setWidegetList = [];
 
   final StopWatchTimer _stopWatchTimer = StopWatchTimer();
 
@@ -133,6 +136,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     Navigator.pop(context);
     setState(() {});
     updateExerciseIndex();
+    updateFirestore();
   }
 
   updateExerciseIndex() {
@@ -143,10 +147,62 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     setState(() {});
   }
 
+// Todo if data get fetchet sets are broke - no delete function - no add set function
+
+  getCurrentWorkout() async {
+    try {
+      var snap = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .get();
+      var data = snap.data()!['currentWorkout'] as Map<String, dynamic>;
+
+      for (var exerciseName in data.keys) {
+        var sets = data[exerciseName] as Map<String, dynamic>;
+        List<NewSetWidget> setWidgetList = [];
+        sets.forEach((setName, setData) {
+          setWidgetList.add(NewSetWidget(
+            index: setWidgetList.length,
+            reps: TextEditingController(text: setData['reps']),
+            weight: TextEditingController(text: setData['weight']),
+            updateFirestore: updateFirestore,
+            onDelete: (int index) {
+              setState(() {
+                setWidgetList.removeAt(index);
+
+                // Update indexes
+                for (int i = index; i < setWidgetList.length; i++) {
+                  setWidgetList[i].index = i;
+                }
+              });
+            },
+          ));
+        });
+        exerciseWidgets.add(ExerciseWidget(
+          name: exerciseName,
+          index: exerciseWidgets.length,
+          deleteExercise: () => deleteExercise(exerciseWidgets.length),
+          setWidgetList: setWidgetList,
+          updateFirestore: updateFirestore,
+        ));
+      }
+
+      setState(() {});
+    } catch (e) {
+      print('Error fetching current workout: $e');
+    }
+  }
+
   @override
   void dispose() async {
     super.dispose();
     await _stopWatchTimer.dispose(); // Need to call dispose function.
+  }
+
+  @override
+  void initState() {
+    getCurrentWorkout();
+    super.initState();
   }
 
   @override
@@ -211,7 +267,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                           name: key,
                           index: index, // Index setzen
                           deleteExercise: () => deleteExercise(index),
-                          setWidgetList: [],
+                          setWidgetList: setWidegetList,
                           updateFirestore:
                               updateFirestore, // Hier wird der Index an deleteExercise übergeben
                         ));
