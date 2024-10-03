@@ -52,6 +52,7 @@ class _ExerciseWidgetState extends State<ExerciseWidget> {
         updateFirestore: widget.updateFirestore,
       ),
     );
+    print('widget.setWidgetList $widget.setWidgetList');
     widget.updateFirestore();
   }
 

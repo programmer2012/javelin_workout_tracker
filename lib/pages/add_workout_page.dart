@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/count_up_timer_widget.dart';
 import 'package:javelin_workout_tracker/components/exercise_widget.dart';
 import 'package:javelin_workout_tracker/components/new_set_widget.dart';
-// import 'package:javelin_workout_tracker/models/exercise_data.dart';
-// import 'package:javelin_workout_tracker/models/set_widget_data.dart';
 import 'package:javelin_workout_tracker/pages/choose_workout.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 
@@ -94,30 +92,28 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     Navigator.pop(context);
   }
 
-  void resetCurrentWorkout() {
-    _firestore
+  Future resetCurrentWorkout() async {
+    await _firestore
         .collection('users')
         .doc(_auth.currentUser!.uid)
         .update({'currentWorkout': {}});
   }
 
   void updateFirestore() {
-    Map exercises = {};
-    // print(exerciseWidgets);
+    Map<String, dynamic> exercises = {};
     for (var element in exerciseWidgets) {
       var widgetList = element.setWidgetList;
       var name = element.name;
 
-      exercises['$name'] = {};
-      int setCount = 1;
+      exercises['$name'] = [];
+
       widgetList.forEach((set) {
-        String setString = 'set$setCount';
         exercises['$name']
-            ['$setString'] = {'reps': set.reps.text, 'weight': set.weight.text};
-        setCount++;
+            .add({'reps': set.reps.text, 'weight': set.weight.text});
       });
     }
-    print(exercises);
+
+    print("exercise $exercises");
 
     setState(() {});
     _firestore
@@ -147,8 +143,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     setState(() {});
   }
 
-// Todo if data get fetchet sets are broke - no delete function - no add set function
-
   getCurrentWorkout() async {
     try {
       var snap = await _firestore
@@ -157,10 +151,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           .get();
       var data = snap.data()!['currentWorkout'] as Map<String, dynamic>;
 
+      print('data $data');
+
       for (var exerciseName in data.keys) {
-        var sets = data[exerciseName] as Map<String, dynamic>;
+        var sets =
+            data[exerciseName] as List<dynamic>; // Now treating sets as a List
+        print('sets $sets');
         List<NewSetWidget> setWidgetList = [];
-        sets.forEach((setName, setData) {
+
+        for (var setData in sets) {
           setWidgetList.add(NewSetWidget(
             index: setWidgetList.length,
             reps: TextEditingController(text: setData['reps']),
@@ -177,7 +176,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
               });
             },
           ));
-        });
+        }
+
         exerciseWidgets.add(ExerciseWidget(
           name: exerciseName,
           index: exerciseWidgets.length,
@@ -215,7 +215,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       body: SingleChildScrollView(
         child: Center(
           child: Container(
-            margin: EdgeInsets.symmetric(
+            margin: const EdgeInsets.symmetric(
               horizontal: 20,
             ),
             child: Column(
@@ -223,8 +223,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
               children: [
                 exerciseWidgets.isNotEmpty
                     ? Container(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        margin: EdgeInsets.only(top: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        margin: const EdgeInsets.only(top: 20),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             color: Colors.grey.shade200),
@@ -240,12 +240,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                     exerciseWidgets[index],
                               ),
                             ),
-                            // TextButton(
-                            //     onPressed: updateFirestore,
-                            //     child: Text('Update Firestore')),
                             TextButton(
                                 onPressed: saveWorkout,
-                                child: Text('Save Workout'))
+                                child: const Text('Save Workout'))
                           ],
                         ),
                       )
@@ -261,26 +258,23 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                     );
                     isSelected.forEach((key, value) {
                       if (value) {
-                        int index = exerciseWidgets
-                            .length; // Index setzen auf aktuelle Länge der Liste
+                        int index = exerciseWidgets.length;
                         exerciseWidgets.add(ExerciseWidget(
                           name: key,
-                          index: index, // Index setzen
+                          index: index,
                           deleteExercise: () => deleteExercise(index),
                           setWidgetList: setWidegetList,
-                          updateFirestore:
-                              updateFirestore, // Hier wird der Index an deleteExercise übergeben
+                          updateFirestore: updateFirestore,
                         ));
                       }
                     });
                     setState(() {});
                     updateFirestore();
-                    // print(exerciseWidgets[0]);
                   },
                   child: Container(
-                    margin: EdgeInsets.only(top: 20),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                    // margin: EdgeInsets.symmetric(vertical: 20),
+                    margin: const EdgeInsets.only(top: 20),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 20),
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
                         color: Colors.grey.shade200),
