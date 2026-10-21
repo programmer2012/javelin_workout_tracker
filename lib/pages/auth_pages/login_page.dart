@@ -20,33 +20,61 @@ class _LoginPageState extends State<LoginPage> {
   // text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final usernameControler = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   // sign user in method
-  void signUserIn() async {
+  Future<void> signUserIn() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      errorMessage('Please enter your email and password');
+      return;
+    }
+
+    // Captured before awaiting: a successful sign-in swaps this page out for
+    // the main view, so `context` may already be gone by the time the
+    // spinner has to come down.
+    final navigator = Navigator.of(context);
+
     showDialog(
       context: context,
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
+      // Dismissing the barrier used to pop the login page itself.
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    // try sign in
+    String? failure;
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
+        email: email,
+        password: password,
       );
-      // pop the loading circle
-      Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
-      // pop the loading circle
-      Navigator.pop(context);
-      // Wrong email
-      errorMessage(e.code);
+    } on FirebaseAuthException catch (err) {
+      failure = err.message ?? err.code;
+    } catch (err) {
+      // Network and platform errors used to escape the catch entirely,
+      // leaving the user stuck behind a spinner they could not dismiss.
+      failure = err.toString();
+    } finally {
+      navigator.pop();
     }
+
+    if (failure != null && mounted) errorMessage(failure);
+  }
+
+  // sign in with google
+  void signInWithGoogle() async {
+    final result = await AuthService().signInWithGoogle();
+    // Null means the user cancelled the account picker.
+    if (!mounted || result == null || result == 'success') return;
+    errorMessage(result);
   }
 
   // error message
@@ -93,15 +121,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 const SizedBox(height: 25),
-
-                // username textfield
-                MyTextField(
-                  controller: usernameControler,
-                  hintText: 'Username',
-                  obscureText: true,
-                ),
-
-                const SizedBox(height: 10),
 
                 // email textfield
                 MyTextField(
@@ -184,8 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                     // google button
                     SquareTile(
                       imgPath: 'lib/images/google.png',
-                      onTap: () =>
-                          AuthService().signInWithGoogle(firstLogin: false),
+                      onTap: signInWithGoogle,
                     ),
                   ],
                 ),

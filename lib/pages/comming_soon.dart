@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 
 class CommingSoon extends StatelessWidget {
-  const CommingSoon({super.key});
+  final String text;
+
+  const CommingSoon({
+    super.key,
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.deepPurple,
       body: Center(
         child: Text(
-          'Comming Soon',
-          style: TextStyle(color: Colors.white),
+          text,
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );

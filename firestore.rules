@@ -1,0 +1,82 @@
+rules_version = '2';
+
+// Access model
+// ------------
+// Data belongs to one athlete. The only way anyone else reads it is coaching,
+// and coaching access is always granted BY the athlete: redeeming a coach's
+// invite code writes that coach's uid onto the athlete's own document.
+//
+// A coach therefore cannot grant themselves anything — writes to a user
+// document are owner-only, so only the athlete can add or remove a coach.
+// Coach access is read-only everywhere.
+//
+// Deploy with:  firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Reads the athlete's own document to see who they granted access to.
+    // Used for subcollections, where the uid list is on the parent.
+    function isCoachOf(userId) {
+      return signedIn()
+        && request.auth.uid in
+             get(/databases/$(database)/documents/users/$(userId))
+               .data.get('coachUids', []);
+    }
+
+    match /users/{userId} {
+      // `resource.data` rather than a get() here: it is the document being
+      // read, so this costs nothing extra, and it lets a coach run
+      //   where('coachUids', arrayContains: uid)
+      // to list their athletes without being able to list anyone else.
+      allow read: if isOwner(userId)
+                  || (signedIn()
+                      && request.auth.uid in resource.data.get('coachUids', []));
+
+      // Only the athlete ever writes their own document — this is what stops
+      // a coach from adding themselves to someone's coachUids.
+      allow write: if isOwner(userId);
+
+      // Finished workouts: the whole point of the coach view.
+      match /workouts/{workoutId} {
+        allow read: if isOwner(userId) || isCoachOf(userId);
+        allow write: if isOwner(userId);
+      }
+
+      // Any other subcollection added later stays owner-only until a rule
+      // above deliberately opens it.
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /coachInvites/{code} {
+      // The code itself is the secret, and the document holds only a uid and
+      // a display name, so anyone holding a code may resolve it.
+      allow get: if signedIn();
+
+      // Listing is denied: it would hand over every coach code at once.
+      allow list: if false;
+
+      allow create: if signedIn()
+                    && request.resource.data.coachUid == request.auth.uid;
+      allow update, delete: if signedIn()
+                            && resource.data.coachUid == request.auth.uid;
+    }
+
+    // Everything else is denied, because no rule grants it — Firestore
+    // denies by default and allows never cascade. Spelled out so the intent
+    // is on the page: the global `note` collection left behind by a tutorial
+    // should be unreachable.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

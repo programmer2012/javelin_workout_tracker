@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/new_set_widget.dart';
+import 'package:javelin_workout_tracker/models/workout_exercise.dart';
 
-// ignore: must_be_immutable
+/// Renders one exercise of the current workout. All mutations are delegated to
+/// the page, which owns the data.
 class ExerciseWidget extends StatefulWidget {
-  final String name;
-  final Function deleteExercise;
-  final Function updateFirestore;
-  int index;
-  List<NewSetWidget> setWidgetList;
-  ExerciseWidget({
+  final WorkoutExercise exercise;
+  final int index;
+  final bool isExpanded;
+  final VoidCallback onDelete;
+  final VoidCallback onAddSet;
+  final ValueChanged<int> onDeleteSet;
+  final VoidCallback onChanged;
+  final ValueChanged<int> onExpansionChanged;
+
+  const ExerciseWidget({
     super.key,
-    required this.name,
-    required this.deleteExercise,
+    required this.exercise,
     required this.index,
-    required this.setWidgetList,
-    required this.updateFirestore,
+    required this.isExpanded,
+    required this.onDelete,
+    required this.onAddSet,
+    required this.onDeleteSet,
+    required this.onChanged,
+    required this.onExpansionChanged,
   });
 
   @override
@@ -22,96 +31,79 @@ class ExerciseWidget extends StatefulWidget {
 }
 
 class _ExerciseWidgetState extends State<ExerciseWidget> {
-  List<String> weight = [];
+  final ExpansionTileController _expansionController =
+      ExpansionTileController();
 
-  List<String> reps = [];
-
-  addSet() {
-    weight.clear();
-    reps.clear();
-
-    getWeightAndSets();
-    setState(() {});
-
-    widget.setWidgetList.add(
-      NewSetWidget(
-        index: widget.setWidgetList.length,
-        weight:
-            TextEditingController(text: weight.isNotEmpty ? weight.last : ''),
-        reps: TextEditingController(text: reps.isNotEmpty ? reps.last : ''),
-        onDelete: (int index) {
-          setState(() {
-            widget.setWidgetList.removeAt(index);
-
-            // Update indexes
-            for (int i = index; i < widget.setWidgetList.length; i++) {
-              widget.setWidgetList[i].index = i;
-            }
-          });
-        },
-        updateFirestore: widget.updateFirestore,
-      ),
-    );
-    print('widget.setWidgetList $widget.setWidgetList');
-    widget.updateFirestore();
-  }
-
-  getWeightAndSets() {
-    for (var widget in widget.setWidgetList) {
-      weight.add(widget.weight.text);
-    }
-
-    for (var widget in widget.setWidgetList) {
-      reps.add(widget.reps.text);
+  @override
+  void didUpdateWidget(covariant ExerciseWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only safe here: in initState the controller is not attached to a tile
+    // yet. Keeps the accordion to a single open exercise.
+    if (widget.isExpanded != oldWidget.isExpanded) {
+      widget.isExpanded
+          ? _expansionController.expand()
+          : _expansionController.collapse();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final sets = widget.exercise.sets;
+
     return GestureDetector(
-      onLongPress: () => widget.deleteExercise(),
+      onLongPress: widget.onDelete,
       child: ExpansionTile(
+        controller: _expansionController,
+        initiallyExpanded: widget.isExpanded,
+        onExpansionChanged: (expanded) {
+          widget.onExpansionChanged(expanded ? widget.index : -1);
+        },
         tilePadding: const EdgeInsets.symmetric(horizontal: 0),
-        title: Text(widget.name),
+        title: Text(widget.exercise.name),
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 7),
+            padding: const EdgeInsets.symmetric(vertical: 7),
             alignment: Alignment.center,
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
+                SizedBox(
                   width: 50,
-                  alignment: Alignment.center,
-                  child: Text('Set'),
-                ),
-                Container(
-                  width: 75,
-                  alignment: Alignment.center,
-                  child: Text('Reps'),
-                ),
-                Container(
-                  width: 80,
-                  alignment: Alignment.center,
-                  child: Text('Weight [kg]'),
+                  child: Text('Set', textAlign: TextAlign.center),
                 ),
                 SizedBox(
-                  width: 60,
-                )
+                  width: 75,
+                  child: Text('Reps', textAlign: TextAlign.center),
+                ),
+                SizedBox(
+                  width: 80,
+                  child: Text('Weight [kg]', textAlign: TextAlign.center),
+                ),
+                SizedBox(width: 60),
               ],
             ),
           ),
-          Container(
-            height: widget.setWidgetList.length <= 3
-                ? (50 * widget.setWidgetList.length).ceilToDouble()
-                : 150,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: widget.setWidgetList.length,
-              itemBuilder: (context, index) => widget.setWidgetList[index],
-            ),
+          // Laid out at its natural height rather than inside a fixed-height
+          // inner scroller: the page's own list scrolls, so every set stays
+          // reachable no matter how many there are or how large the user's
+          // font scale is.
+          Column(
+            children: [
+              for (var index = 0; index < sets.length; index++)
+                NewSetWidget(
+                  // The id keeps each row's text controllers with its set.
+                  key: ValueKey(sets[index].id),
+                  set: sets[index],
+                  index: index,
+                  onChanged: widget.onChanged,
+                  onDelete: () => widget.onDeleteSet(index),
+                ),
+            ],
           ),
-          TextButton(onPressed: addSet, child: const Text('Add Set'))
+          TextButton(
+            onPressed: widget.onAddSet,
+            child: const Text('Add Set'),
+          ),
         ],
       ),
     );

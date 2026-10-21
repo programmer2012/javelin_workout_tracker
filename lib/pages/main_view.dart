@@ -1,14 +1,15 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:javelin_workout_tracker/models/workout.dart';
 import 'package:javelin_workout_tracker/pages/add_workout_page.dart';
+import 'package:javelin_workout_tracker/pages/coach_page.dart';
 import 'package:javelin_workout_tracker/pages/comming_soon.dart';
-import 'package:javelin_workout_tracker/pages/home_page.dart';
-// import 'package:javelin_workout_tracker/pages/home_page.dart';
 import 'package:javelin_workout_tracker/pages/overview_page.dart';
-
-import '../components/line_chart_widget.dart';
+import 'package:javelin_workout_tracker/pages/progress_page.dart';
+import 'package:javelin_workout_tracker/services/workout_repository.dart';
 
 class MainView extends StatefulWidget {
   const MainView({super.key});
@@ -18,56 +19,94 @@ class MainView extends StatefulWidget {
 }
 
 class _MainViewState extends State<MainView> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  var userData = {};
-  int currentIndex = 0;
+  final WorkoutRepository _repository = WorkoutRepository();
+
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _subscription;
+
+  /// Owned here rather than by each page: the overview needs the history for
+  /// its totals and the progress page needs it for the exercise charts, and
+  /// two separate listeners meant downloading the whole collection twice.
+  StreamSubscription<List<Workout>>? _workoutSubscription;
+
+  Map<String, dynamic>? _userData;
+  List<Workout> _workouts = [];
+  String? _error;
+  int _currentIndex = 0;
+  bool _migrationStarted = false;
 
   @override
   void initState() {
     super.initState();
-    getData();
+    _subscribe();
   }
 
-  getData() async {
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _workoutSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _subscribe() {
+    _workoutSubscription?.cancel();
+    _workoutSubscription = _repository.watchWorkouts().listen(
+      (workouts) {
+        if (!mounted) return;
+        setState(() => _workouts = workouts);
+      },
+      // The totals and charts simply stay empty; the profile stream below
+      // owns the visible error state.
+      onError: (Object error) => debugPrint('Could not load workouts: $error'),
+    );
+
+    _subscription?.cancel();
+    _subscription = _repository.userStream().listen(
+      (snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _userData = snapshot.data() ?? {};
+          _error = null;
+        });
+        _migrateOnce();
+      },
+      onError: (Object error) {
+        if (!mounted) return;
+        // Previously this only printed, leaving the user on an endless
+        // spinner with no way to recover.
+        setState(() => _error = 'Could not load your profile: $error');
+      },
+    );
+  }
+
+  /// Moves a legacy `workoutHistory` array into the workouts subcollection.
+  /// A no-op once that field is gone, so it is safe on every launch.
+  Future<void> _migrateOnce() async {
+    if (_migrationStarted) return;
+    _migrationStarted = true;
     try {
-      var snap = await _firestore
-          .collection('users')
-          .doc(_auth.currentUser!.uid)
-          .get();
-      userData = snap.data()!;
-      setState(() {});
-    } catch (e) {
-      print('fehler');
+      await _repository.migrateLegacyWorkoutHistory();
+    } catch (error) {
+      debugPrint('Workout history migration failed: $error');
+      _migrationStarted = false;
     }
+  }
+
+  void _retry() {
+    setState(() => _error = null);
+    _subscribe();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      OverviewPage(
-        userData: userData,
-      ),
-      const CommingSoon(),
-      AddWorkoutPage(
-        userData: userData,
-      ),
-      const HomePage(),
-      const LineChartPage(
-        isShowingMainData: false,
-      ),
-    ];
     return Scaffold(
       backgroundColor: Colors.deepPurple,
-      body: userData.isNotEmpty
-          ? screens[currentIndex]
-          : const CircularProgressIndicator(),
+      body: _buildBody(),
       bottomNavigationBar: CurvedNavigationBar(
         height: 60,
-        index: currentIndex,
+        index: _currentIndex,
         backgroundColor: Colors.deepPurple,
         animationDuration: const Duration(milliseconds: 400),
-        onTap: (index) => setState(() => currentIndex = index),
+        onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           Icon(Icons.home),
           Icon(Icons.fitness_center),
@@ -77,5 +116,43 @@ class _MainViewState extends State<MainView> {
         ],
       ),
     );
+  }
+
+  Widget _buildBody() {
+    final error = _error;
+    if (error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(onPressed: _retry, child: const Text('Retry')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final userData = _userData;
+    if (userData == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final screens = [
+      OverviewPage(userData: userData, workouts: _workouts),
+      const CommingSoon(text: 'Comming Soon'),
+      AddWorkoutPage(userData: userData),
+      CoachPage(userData: userData),
+      ProgressPage(userData: userData, workouts: _workouts),
+    ];
+
+    return IndexedStack(index: _currentIndex, children: screens);
   }
 }

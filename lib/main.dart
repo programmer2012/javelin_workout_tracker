@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         fontFamily: GoogleFonts.kdamThmorPro().fontFamily,
       ),
       debugShowCheckedModeBanner: false,
-      home: AuthPage(),
+      home: const AuthPage(),
     );
   }
 }

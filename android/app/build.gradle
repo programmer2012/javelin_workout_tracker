@@ -24,7 +24,12 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.example.javelin_workout_tracker"
-    compileSdkVersion flutter.compileSdkVersion
+    // Pinned instead of `flutter.compileSdkVersion`, which is 34 on Flutter
+    // 3.19.5. AGP 7.3.0 predates compileSdk 34 support (added in AGP 8.1.1),
+    // and the installed build-tools stop at 33. The plugins in pubspec.yaml
+    // are pinned to their compileSdk 33 builds to match; raise all of these
+    // together or none.
+    compileSdkVersion 33
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -46,7 +51,8 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion flutter.minSdkVersion
-        targetSdkVersion flutter.targetSdkVersion
+        // Matches compileSdkVersion above; must never exceed it.
+        targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }

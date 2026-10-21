@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/components/my_button.dart';
 import 'package:javelin_workout_tracker/components/my_textfield.dart';
 import 'package:javelin_workout_tracker/components/square_tile.dart';
-// import 'package:javelin_workout_tracker/models/user.dart' as model;
 import 'package:javelin_workout_tracker/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -20,7 +19,39 @@ class RegisterPageState extends State<RegisterPage> {
   final confirmPasswordController = TextEditingController();
   final usernameControler = TextEditingController();
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    usernameControler.dispose();
+    super.dispose();
+  }
+
   // sign user up method
+  void signUserUp() async {
+    final result = await AuthService().signUserUp(
+      username: usernameControler.text,
+      email: emailController.text,
+      password: passwordController.text,
+      passwordConfirm: confirmPasswordController.text,
+    );
+    if (!mounted || result == 'success') return;
+    showMessage(result);
+  }
+
+  // sign in with google
+  void signInWithGoogle() async {
+    final result = await AuthService().signInWithGoogle();
+    // Null means the user cancelled the account picker.
+    if (!mounted || result == null || result == 'success') return;
+    showMessage(result);
+  }
+
+  void showMessage(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,15 +118,7 @@ class RegisterPageState extends State<RegisterPage> {
 
                 // sign in button
                 MyButton(
-                  onTap: () async {
-                    String res = await AuthService().signUserUp(
-                      username: usernameControler.text,
-                      email: emailController.text,
-                      password: passwordController.text,
-                      passwordConfirm: confirmPasswordController.text,
-                    );
-                    print(res);
-                  },
+                  onTap: signUserUp,
                   name: 'Sign Up',
                 ),
 
@@ -138,8 +161,7 @@ class RegisterPageState extends State<RegisterPage> {
                     // google button
                     SquareTile(
                       imgPath: 'lib/images/google.png',
-                      onTap: () =>
-                          AuthService().signInWithGoogle(firstLogin: true),
+                      onTap: signInWithGoogle,
                     ),
                   ],
                 ),

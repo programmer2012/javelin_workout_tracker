@@ -34,16 +34,35 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  firebase_core: ^2.21.0
-  cloud_firestore: ^4.12.2
-  firebase_auth: ^4.12.1
-  google_sign_in: ^6.1.6
+
+  # Pinned to exact versions, not ranges. The next release of each of these
+  # builds against compileSdk 34, which this project's Android toolchain
+  # cannot compile: AGP 7.3.0 / Gradle 7.5 / JDK 11 / build-tools 33.
+  # Raising any of them means upgrading AGP to 8.1+, Gradle to 8.x and the
+  # JDK to 17 first.
+  firebase_core: 2.24.0
+  cloud_firestore: 4.13.3
+  firebase_auth: 4.15.0
+  firebase_storage: 11.5.3
+
+  # firebase_core_web after 2.9.0 removed `PromiseJsImpl`, which the web
+  # implementations shipped with the plugin versions above still reference —
+  # so an unpinned resolution compiles on Android but breaks `flutter build
+  # web` with "Type 'PromiseJsImpl' not found". 2.9.0 still exports it and
+  # satisfies their ^2.9.0 constraint.
+  firebase_core_web: 2.9.0
+
+  # The Android implementations are pinned directly as well: the facades
+  # accept a range, so pub would otherwise resolve these to their
+  # compileSdk 34 builds regardless of the facade version.
+  google_sign_in: 6.2.2
+  google_sign_in_android: 6.1.20
+  image_picker: 1.1.2
+  image_picker_android: 0.8.8+2
+
   curved_navigation_bar: ^1.0.3
   google_fonts: ^6.1.0
   fl_chart: ^0.65.0
-  image_picker: ^1.0.4
-  firebase_storage: ^11.5.3
-  stop_watch_timer: ^3.1.1
 
 dev_dependencies:
   flutter_test:

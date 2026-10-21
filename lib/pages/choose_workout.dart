@@ -1,12 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:javelin_workout_tracker/services/workout_repository.dart';
 
+/// Picks exercises from the user's catalogue.
+///
+/// Pops with the list of selected exercise names, or `null` if the user backed
+/// out without confirming.
 class ChooseWorkout extends StatefulWidget {
-  final Map<dynamic, dynamic> userData;
+  final List<dynamic> exercises;
+
   const ChooseWorkout({
     super.key,
-    required this.userData,
+    required this.exercises,
   });
 
   @override
@@ -14,269 +18,270 @@ class ChooseWorkout extends StatefulWidget {
 }
 
 class _ChooseWorkoutState extends State<ChooseWorkout> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final WorkoutRepository _repository = WorkoutRepository();
+  final TextEditingController _exerciseNameController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
-  // [
-  //   {"id": 1, "name": "Bench Press", "isSelected": false},
-  //   {"id": 2, "name": "Pull Over", "isSelected": false},
-  //   {"id": 3, "name": "Squats", "isSelected": false},
-  //   {"id": 4, "name": "Cleans", "isSelected": false},
-  //   {"id": 5, "name": "Push Ups", "isSelected": false},
-  // ];
-
-  var userData = {};
-
-  List<int> idList = [];
-  Map isSelected = {};
-
-  List<dynamic> _foundExercises = [];
-  List<dynamic> _exercises = [];
+  /// The full catalogue. [_visibleExercises] is only ever a view on it, so
+  /// deleting while a filter is active still removes from the real list.
+  late final List<Map<String, dynamic>> _exercises;
+  List<Map<String, dynamic>> _visibleExercises = [];
+  final Set<String> _selected = {};
 
   @override
   void initState() {
     super.initState();
-    userData = widget.userData;
-    print(userData);
-    idList = [];
-    _exercises = userData['workoutList'];
-    _foundExercises = _exercises;
-    for (var elem in _foundExercises) {
-      isSelected[elem['name']] = false;
-    }
+    _exercises = widget.exercises
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    _visibleExercises = List.of(_exercises);
   }
 
-  // filter the exercises
-  void _runFilter(String enteredKeyword) {
-    List<dynamic> results = [];
-    if (enteredKeyword.isEmpty) {
-      // if the search bar is empty
-      results = _exercises;
-    } else {
-      results = _exercises
-          .where((exercise) => exercise["name"]
-              .toLowerCase()
-              .contains(enteredKeyword.toLowerCase()))
-          .toList();
-    }
+  @override
+  void dispose() {
+    _exerciseNameController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
+  void _runFilter(String keyword) {
+    final query = keyword.trim().toLowerCase();
     setState(() {
-      _foundExercises = results;
+      _visibleExercises = query.isEmpty
+          ? List.of(_exercises)
+          : _exercises
+              .where((exercise) =>
+                  _nameOf(exercise).toLowerCase().contains(query))
+              .toList();
     });
   }
 
-  // text controller
-  final exerciseNameControler = TextEditingController();
+  String _nameOf(Map<String, dynamic> exercise) =>
+      exercise['name']?.toString() ?? '';
 
-  // delete exercise
-  void delete(index) {
-    _foundExercises.remove(_foundExercises[index]);
-    setState(() {});
-    updateFirestore();
-  }
-
-  // switch active state and save id to list
-  void chosenExercise(index) {
-    var exerciseName = _foundExercises[index]["name"];
-    if (isSelected.containsKey(exerciseName)) {
-      isSelected[exerciseName] = !isSelected[exerciseName];
-    } else {
-      isSelected[exerciseName] = true;
+  Future<void> _saveCatalogue() async {
+    try {
+      await _repository.saveExerciseCatalogue(_exercises);
+    } catch (error) {
+      _showMessage('Could not save the exercise list: $error');
     }
-
-    setState(() {});
   }
 
-  void addExercise() {
-    Navigator.pop(context, isSelected);
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void createNewExercise() {
-    showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              title: const Text(
-                'Create a new exercise',
-                style: TextStyle(fontSize: 20),
-                textAlign: TextAlign.center,
+  void _delete(Map<String, dynamic> exercise) {
+    setState(() {
+      _exercises.remove(exercise);
+      _visibleExercises.remove(exercise);
+      _selected.remove(_nameOf(exercise));
+    });
+    _saveCatalogue();
+  }
+
+  void _toggleSelection(Map<String, dynamic> exercise) {
+    final name = _nameOf(exercise);
+    setState(() {
+      if (!_selected.remove(name)) _selected.add(name);
+    });
+  }
+
+  void _confirmSelection() {
+    // Return the names in catalogue order so the workout is predictable.
+    final names = _exercises
+        .map(_nameOf)
+        .where(_selected.contains)
+        .toList();
+    Navigator.pop(context, names);
+  }
+
+  /// Ids must stay unique even after deletions, so derive the next one from
+  /// the highest id in use rather than from the list length.
+  int _nextId() {
+    var highest = 0;
+    for (final exercise in _exercises) {
+      final id = exercise['id'];
+      final value = id is int ? id : int.tryParse(id?.toString() ?? '') ?? 0;
+      if (value > highest) highest = value;
+    }
+    return highest + 1;
+  }
+
+  Future<void> _createNewExercise() async {
+    _exerciseNameController.clear();
+
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        String? errorText;
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            title: const Text(
+              'Create a new exercise',
+              style: TextStyle(fontSize: 20),
+              textAlign: TextAlign.center,
+            ),
+            content: TextField(
+              controller: _exerciseNameController,
+              autofocus: true,
+              decoration: InputDecoration(errorText: errorText),
+            ),
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: [
+              MaterialButton(
+                color: Colors.green,
+                onPressed: () {
+                  final value = _exerciseNameController.text.trim();
+                  // Report problems in the dialog instead of throwing out of
+                  // a button callback.
+                  if (value.isEmpty) {
+                    setDialogState(() => errorText = 'Please enter a name');
+                    return;
+                  }
+                  final exists = _exercises.any((exercise) =>
+                      _nameOf(exercise).toLowerCase() == value.toLowerCase());
+                  if (exists) {
+                    setDialogState(
+                        () => errorText = 'This exercise already exists');
+                    return;
+                  }
+                  Navigator.pop(dialogContext, value);
+                },
+                child: const Text('save'),
               ),
-              content: TextField(controller: exerciseNameControler),
-              actionsAlignment: MainAxisAlignment.spaceBetween,
-              actions: [
-                MaterialButton(
-                  onPressed: save,
-                  child: const Text('save'),
-                  color: Colors.green,
-                ),
-                MaterialButton(
-                  onPressed: cancel,
-                  child: const Text('cancel'),
-                  color: Colors.red,
-                )
-              ],
-            ));
-  }
+              MaterialButton(
+                color: Colors.red,
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('cancel'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
 
-  void updateFirestore() {
-    _firestore
-        .collection('users')
-        .doc(_auth.currentUser!.uid)
-        .update({'workoutList': _exercises});
-  }
+    if (name == null || !mounted) return;
 
-  void save() {
-    // get exercise name from text controller
-    String newExerciseName = exerciseNameControler.text;
-    bool nameExist =
-        _exercises.any((exercise) => exercise['name'] == newExerciseName);
-
-    if (newExerciseName.isNotEmpty && !nameExist) {
-      _exercises.add({
-        "id": _exercises.length + 1,
-        "isSelected": false,
-        'name': newExerciseName,
-        "sets": [],
-      });
-    } else if (newExerciseName.isEmpty) {
-      throw Exception('Textfield is empty');
-    } else if (nameExist) {
-      throw Exception('Exercise already exists');
-    }
-
-    isSelected[newExerciseName] = false;
-
-    // pop dialog box
-    Navigator.pop(context);
-    exerciseNameControler.clear();
-
-    setState(() {});
-    updateFirestore();
-  }
-
-  void cancel() {
-    Navigator.pop(context);
-    exerciseNameControler.clear();
-  }
-
-  void popAddExercise() {
-    Navigator.pop(context);
+    setState(() {
+      _exercises.add({'id': _nextId(), 'name': name});
+      _runFilter(_searchController.text);
+    });
+    _exerciseNameController.clear();
+    await _saveCatalogue();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: Container(
-        margin: EdgeInsets.fromLTRB(36.0, 0, 4, 0),
+        margin: const EdgeInsets.fromLTRB(36.0, 0, 4, 0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            isSelected.containsValue(true)
-                ? FloatingActionButton(
-                    heroTag: null,
-                    onPressed: addExercise,
-                    child: Icon(
-                      Icons.check,
-                      color: Colors.white,
-                    ),
-                    backgroundColor: Colors.lightGreen,
-                  )
-                : Container(
-                    width: 0,
-                    height: 0,
-                  ),
+            if (_selected.isNotEmpty)
+              FloatingActionButton(
+                heroTag: null,
+                onPressed: _confirmSelection,
+                backgroundColor: Colors.lightGreen,
+                child: const Icon(Icons.check, color: Colors.white),
+              )
+            else
+              const SizedBox.shrink(),
             FloatingActionButton(
               heroTag: null,
-              onPressed: createNewExercise,
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-              ),
+              onPressed: _createNewExercise,
               backgroundColor: Colors.deepPurple,
+              child: const Icon(Icons.add, color: Colors.white),
             ),
           ],
         ),
       ),
       appBar: AppBar(
         leading: IconButton(
-            onPressed: popAddExercise, icon: const Icon(Icons.arrow_back)),
-        title: Text('Add Excercise'),
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const Text('Add Excercise'),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           children: [
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 10),
             TextField(
-              onChanged: (value) => _runFilter(value),
+              controller: _searchController,
+              onChanged: _runFilter,
               decoration: const InputDecoration(
-                  labelText: 'Search', suffixIcon: Icon(Icons.search)),
+                labelText: 'Search',
+                suffixIcon: Icon(Icons.search),
+              ),
             ),
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 80.0),
-                  itemCount: _foundExercises.length,
-                  itemBuilder: (context, index) {
-                    String title = _foundExercises[index]['name'];
-                    if (title.length > 20) {
-                      title = '${title.substring(0, 20)}...';
-                    }
-                    return Card(
-                      key: ValueKey(index),
-                      color: Colors.deepPurpleAccent,
-                      elevation: 4,
-                      margin: const EdgeInsets.symmetric(
-                        vertical: 10,
-                      ),
-                      child: Tooltip(
-                        message: _foundExercises[index]['name'],
-                        child: ListTile(
-                          contentPadding: EdgeInsets.fromLTRB(
-                            12,
-                            0,
-                            0,
-                            0,
-                          ),
-                          selected: false,
-                          onTap: () => chosenExercise(index),
-                          leading: Text(
-                            (index + 1).toString(),
-                            style: TextStyle(
-                                color: Colors.grey.shade300, fontSize: 15),
-                          ),
-                          title: Text(title, style: TextStyle(fontSize: 15)),
-                          // horizontalTitleGap: 40,
-                          trailing: Row(
-                            // mainAxisAlignment: MainAxisAlignment.end,
-                            // crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.fitness_center_sharp,
-                                color:
-                                    isSelected[_foundExercises[index]['name']]
+              child: _visibleExercises.isEmpty
+                  ? const Center(child: Text('No exercises found'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 80.0),
+                      itemCount: _visibleExercises.length,
+                      itemBuilder: (context, index) {
+                        final exercise = _visibleExercises[index];
+                        final name = _nameOf(exercise);
+                        final title = name.length > 20
+                            ? '${name.substring(0, 20)}...'
+                            : name;
+
+                        return Card(
+                          key: ValueKey(exercise['id'] ?? name),
+                          color: Colors.deepPurpleAccent,
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 10),
+                          child: Tooltip(
+                            message: name,
+                            child: ListTile(
+                              contentPadding:
+                                  const EdgeInsets.fromLTRB(12, 0, 0, 0),
+                              onTap: () => _toggleSelection(exercise),
+                              leading: Text(
+                                (index + 1).toString(),
+                                style: TextStyle(
+                                  color: Colors.grey.shade300,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              title: Text(
+                                title,
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.fitness_center_sharp,
+                                    color: _selected.contains(name)
                                         ? Colors.green
                                         : Colors.grey.shade300,
+                                  ),
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () => _delete(exercise),
+                                    icon: Icon(
+                                      Icons.delete,
+                                      color: Colors.red[600],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => delete(index),
-                                  icon: Icon(
-                                    Icons.delete,
-                                    color: Colors.red[600],
-                                  ))
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  }),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

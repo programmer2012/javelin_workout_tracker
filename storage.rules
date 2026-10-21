@@ -1,0 +1,30 @@
+rules_version = '2';
+
+// Profile pictures are uploaded to `profilePics/{uid}` by
+// StoregeMethods.uploadImageToStorage. Only the owner may write one, and the
+// file must actually be an image of a sane size — without that, the path is
+// an open upload endpoint for any signed-in user's own key.
+//
+// Deploy with:  firebase deploy --only storage
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /profilePics/{userId} {
+      // Readable by any signed-in user: profile pictures are rendered from a
+      // download URL. Tighten to `request.auth.uid == userId` if pictures
+      // should stay private to the athlete.
+      allow read: if request.auth != null;
+
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

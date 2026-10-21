@@ -1,18 +1,40 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-// import 'package:javelin_workout_tracker/models/user.dart' as model;
 
 class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // final String username;
-  // final String password;
-  // final String passwordConfirm;
-  // final String email;
+  /// The exercises a new account starts with.
+  static List<Map<String, dynamic>> get _defaultWorkoutList => [
+        {"id": 1, "name": "Bench Press"},
+        {"id": 2, "name": "Pull Over"},
+        {"id": 3, "name": "Squats"},
+        {"id": 4, "name": "Cleans"},
+        {"id": 5, "name": "Push Ups"},
+      ];
 
-  // AuthService(this.username, this.password, this.passwordConfirm, this.email,)
+  /// Creates the user document, leaving any existing data untouched.
+  ///
+  /// `merge: true` matters because this also runs for Google sign-in: a user
+  /// who taps "sign in with Google" on the register screen while already
+  /// having an account must not have their workout and weight history wiped.
+  Future<void> _ensureUserDocument({
+    required String uid,
+    required String? email,
+    required String? username,
+  }) async {
+    final doc = _firestore.collection('users').doc(uid);
+    final snapshot = await doc.get();
+
+    await doc.set({
+      'uid': uid,
+      'email': email,
+      'username': username,
+      if (!snapshot.exists) 'workoutList': _defaultWorkoutList,
+    }, SetOptions(merge: true));
+  }
 
   // sign user up
   Future<String> signUserUp({
@@ -21,137 +43,62 @@ class AuthService {
     required String password,
     required String passwordConfirm,
   }) async {
-    String res = "Some error occurred";
+    if (username.trim().isEmpty) return 'Please enter a username';
+    if (email.trim().isEmpty) return 'Please enter an email address';
+    if (password.isEmpty) return 'Please enter a password';
+    if (password != passwordConfirm) return 'The passwords do not match';
+
     try {
-      if (password == passwordConfirm &&
-          password.isNotEmpty &&
-          email.isNotEmpty &&
-          username.isNotEmpty) {
-        // register user
-        UserCredential cred = await _auth.createUserWithEmailAndPassword(
-            email: email, password: password);
+      final cred = await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
 
-        // StoregeMethods().uploadImageToStorage('profilePics', file, false);
+      final uid = cred.user?.uid;
+      if (uid == null) return 'Sign up failed, please try again';
 
-        // add user to database
-        await _firestore.collection('users').doc(cred.user!.uid).set({
-          'username': username,
-          'uid': cred.user!.uid,
-          'email': email,
-          'workoutList': [
-            {"id": 1, "name": "Bench Press", "isSelected": false},
-            {"id": 2, "name": "Pull Over", "isSelected": false},
-            {"id": 3, "name": "Squats", "isSelected": false},
-            {"id": 4, "name": "Cleans", "isSelected": false},
-            {"id": 5, "name": "Push Ups", "isSelected": false},
-          ],
-        });
-        res = 'success';
-      }
+      await _ensureUserDocument(
+        uid: uid,
+        email: email.trim(),
+        username: username.trim(),
+      );
+      return 'success';
+    } on FirebaseAuthException catch (err) {
+      return err.message ?? err.code;
     } catch (err) {
-      res = err.toString();
+      return err.toString();
     }
-    return res;
   }
 
-  // error message
-  // void errorMessage(String message) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         title: Center(
-  //           child: Text(
-  //             message,
-  //             style: const TextStyle(color: Colors.deepPurple),
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
+  /// Signs in with Google. Returns `null` when the user cancelled the dialog.
+  Future<String?> signInWithGoogle() async {
+    try {
+      // Null when the user dismisses the account picker.
+      final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();
+      if (gUser == null) return null;
 
-  // Email and Password Sing Up
-  // void signUserUp() async {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return const Center(
-  //         child: CircularProgressIndicator(),
-  //       );
-  //     },
-  //   );
+      final gAuth = await gUser.authentication;
 
-  //   // creating the user
-  //   try {
-  //     // check if passwords are the same
-  //     if (password == passwordConfirm) {
-  //       UserCredential userCred =
-  //           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-  //         email: email,
-  //         password: password,
-  //       );
+      final credential = GoogleAuthProvider.credential(
+        accessToken: gAuth.accessToken,
+        idToken: gAuth.idToken,
+      );
 
-  //       model.User user = model.User(
-  //         email: email,
-  //         uid: userCred.user!.uid,
-  //         username: username,
-  //       );
+      final cred = await _auth.signInWithCredential(credential);
+      final user = cred.user;
+      if (user == null) return 'Sign in failed, please try again';
 
-  //       await _firestore
-  //           .collection("users")
-  //           .doc(userCred.user!.uid)
-  //           .set(user.toJson());
-  //     } else {
-  //       // show error message, passwords don't match
-  //       errorMessage("Passwords don' match!");
-  //     }
+      await _ensureUserDocument(
+        uid: user.uid,
+        email: user.email,
+        username: user.displayName,
+      );
 
-  //     // pop the loading circle
-  //     // ignore: use_build_context_synchronously
-  //     Navigator.pop(context);
-  //   } on FirebaseAuthException catch (e) {
-  //     // pop the loading circle
-  //     // ignore: use_build_context_synchronously
-  //     Navigator.pop(context);
-  //     // Wrong email
-  //     errorMessage(e.code);
-  //   }
-  // }
-
-  // Google Sign In
-  Future<String> signInWithGoogle({required bool firstLogin}) async {
-    // begin interactive sign in process
-    final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();
-
-    // obtain auth deatails from request
-    final GoogleSignInAuthentication gAuth = await gUser!.authentication;
-
-    // create a new credential for user
-    final credential = GoogleAuthProvider.credential(
-      accessToken: gAuth.accessToken,
-      idToken: gAuth.idToken,
-    );
-
-    // finally, lets sign in
-    UserCredential cred =
-        await FirebaseAuth.instance.signInWithCredential(credential);
-
-    if (firstLogin) {
-      await _firestore.collection('users').doc(cred.user!.uid).set({
-        'username': cred.user!.displayName,
-        'uid': cred.user!.uid,
-        'email': cred.user!.email,
-        'workoutList': [
-          {"id": 1, "name": "Bench Press", "isSelected": false},
-          {"id": 2, "name": "Pull Over", "isSelected": false},
-          {"id": 3, "name": "Squats", "isSelected": false},
-          {"id": 4, "name": "Cleans", "isSelected": false},
-          {"id": 5, "name": "Push Ups", "isSelected": false},
-        ]
-      });
+      return 'success';
+    } on FirebaseAuthException catch (err) {
+      return err.message ?? err.code;
+    } catch (err) {
+      return err.toString();
     }
-
-    return 'User logged in with Google Auth';
   }
 }
