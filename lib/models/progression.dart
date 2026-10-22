@@ -33,6 +33,39 @@ enum ExerciseMetric {
       };
 }
 
+/// How far back a chart reaches.
+enum ChartRange {
+  oneMonth('1M', Duration(days: 30)),
+  threeMonths('3M', Duration(days: 90)),
+  sixMonths('6M', Duration(days: 182)),
+  oneYear('1Y', Duration(days: 365)),
+  all('All', null);
+
+  const ChartRange(this.label, this.window);
+
+  final String label;
+
+  /// `null` for [all], which applies no cutoff.
+  final Duration? window;
+}
+
+/// The points inside [range], counted back from [now].
+///
+/// The window is measured from now rather than from the most recent entry: a
+/// "last 3 months" that silently reached back from an entry made a year ago
+/// would show a full chart and read as current data.
+List<ChartPoint> pointsInRange(
+  List<ChartPoint> points,
+  ChartRange range, {
+  DateTime? now,
+}) {
+  final window = range.window;
+  if (window == null) return points;
+
+  final cutoff = (now ?? DateTime.now()).subtract(window);
+  return points.where((point) => !point.date.isBefore(cutoff)).toList();
+}
+
 /// Body weight as chart points, oldest first.
 List<ChartPoint> weightPoints(List<WeightEntry> entries) => [
       for (final entry in entries)

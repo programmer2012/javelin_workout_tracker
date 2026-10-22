@@ -5,8 +5,8 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:javelin_workout_tracker/models/workout.dart';
 import 'package:javelin_workout_tracker/pages/add_workout_page.dart';
-import 'package:javelin_workout_tracker/pages/coach_page.dart';
-import 'package:javelin_workout_tracker/pages/comming_soon.dart';
+import 'package:javelin_workout_tracker/pages/season_page.dart';
+import 'package:javelin_workout_tracker/pages/tests_page.dart';
 import 'package:javelin_workout_tracker/pages/overview_page.dart';
 import 'package:javelin_workout_tracker/pages/progress_page.dart';
 import 'package:javelin_workout_tracker/services/workout_repository.dart';
@@ -111,7 +111,7 @@ class _MainViewState extends State<MainView> {
           Icon(Icons.home),
           Icon(Icons.fitness_center),
           Icon(Icons.add),
-          Icon(Icons.sports),
+          Icon(Icons.calendar_month),
           Icon(Icons.bar_chart),
         ],
       ),
@@ -147,9 +147,9 @@ class _MainViewState extends State<MainView> {
 
     final screens = [
       OverviewPage(userData: userData, workouts: _workouts),
-      const CommingSoon(text: 'Comming Soon'),
+      TestsPage(userData: userData),
       AddWorkoutPage(userData: userData),
-      CoachPage(userData: userData),
+      const SeasonPage(),
       ProgressPage(userData: userData, workouts: _workouts),
     ];
 

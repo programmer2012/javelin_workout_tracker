@@ -188,4 +188,58 @@ void main() {
       );
     });
   });
+
+  group('pointsInRange', () {
+    final now = DateTime(2026, 10, 21);
+    final points = [
+      ChartPoint(date: DateTime(2024, 10, 21), value: 1),
+      ChartPoint(date: DateTime(2025, 12, 21), value: 2),
+      ChartPoint(date: DateTime(2026, 8, 21), value: 3),
+      ChartPoint(date: DateTime(2026, 10, 10), value: 4),
+    ];
+
+    test('all applies no cutoff', () {
+      expect(pointsInRange(points, ChartRange.all, now: now).length, 4);
+    });
+
+    test('narrower ranges keep only recent points', () {
+      expect(
+        pointsInRange(points, ChartRange.oneMonth, now: now)
+            .map((p) => p.value),
+        [4],
+      );
+      expect(
+        pointsInRange(points, ChartRange.threeMonths, now: now)
+            .map((p) => p.value),
+        [3, 4],
+      );
+      expect(
+        pointsInRange(points, ChartRange.oneYear, now: now)
+            .map((p) => p.value),
+        [2, 3, 4],
+      );
+    });
+
+    test('the window is measured from now, not from the newest point', () {
+      // Everything is years old: a 3 month range must come back empty rather
+      // than reaching back from the last entry and looking current.
+      final stale = [
+        ChartPoint(date: DateTime(2020, 1, 1), value: 1),
+        ChartPoint(date: DateTime(2020, 3, 1), value: 2),
+      ];
+      expect(pointsInRange(stale, ChartRange.threeMonths, now: now), isEmpty);
+      expect(pointsInRange(stale, ChartRange.all, now: now).length, 2);
+    });
+
+    test('a point exactly on the cutoff is kept', () {
+      final edge = [
+        ChartPoint(date: now.subtract(const Duration(days: 30)), value: 1),
+      ];
+      expect(pointsInRange(edge, ChartRange.oneMonth, now: now).length, 1);
+    });
+
+    test('an empty list stays empty', () {
+      expect(pointsInRange([], ChartRange.oneMonth, now: now), isEmpty);
+    });
+  });
 }

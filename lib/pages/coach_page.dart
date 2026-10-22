@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:javelin_workout_tracker/models/coach.dart';
 import 'package:javelin_workout_tracker/pages/athlete_detail_page.dart';
+import 'package:javelin_workout_tracker/pages/plan_assign_page.dart';
 import 'package:javelin_workout_tracker/services/coach_repository.dart';
 
 /// Coaching, in both directions: the athletes who have given you access, the
@@ -139,6 +140,7 @@ class _CoachPageState extends State<CoachPage> {
                 ),
               ),
               _buildAthletes(),
+              _buildPlans(),
               _buildMyCode(),
               _buildMyCoaches(),
             ],
@@ -198,6 +200,33 @@ class _CoachPageState extends State<CoachPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPlans() {
+    return _Card(
+      title: 'Trainingspläne',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _Hint(
+            'Importiere deinen Excel-Plan mit dem Skript tools/import_plan.py. '
+            'Danach bestimmst du hier, welche Athleten ihn sehen.',
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.assignment, size: 18),
+              label: const Text('Pläne zuweisen'),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PlanAssignPage()),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

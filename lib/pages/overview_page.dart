@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:javelin_workout_tracker/components/progress_chart.dart';
 import 'package:javelin_workout_tracker/models/progression.dart';
 import 'package:javelin_workout_tracker/models/workout.dart';
+import 'package:javelin_workout_tracker/pages/coach_page.dart';
 import 'package:javelin_workout_tracker/services/storage_methods.dart';
 import 'package:javelin_workout_tracker/services/workout_repository.dart';
 import 'package:javelin_workout_tracker/utils/utils.dart';
@@ -207,13 +208,27 @@ class _OverviewPageState extends State<OverviewPage> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.only(left: 12),
               child: Text(
                 _username,
                 textAlign: TextAlign.end,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.kdamThmorPro(
                   textStyle: const TextStyle(fontSize: 20),
+                ),
+              ),
+            ),
+          ),
+          // The Coach's Zone lost its tab to the training plan, so it is
+          // reachable from here instead.
+          IconButton(
+            tooltip: "Coach's Zone",
+            icon: const Icon(Icons.sports, color: Colors.deepPurple),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CoachPage(
+                  userData: Map<String, dynamic>.from(widget.userData),
                 ),
               ),
             ),

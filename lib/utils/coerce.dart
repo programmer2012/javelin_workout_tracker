@@ -25,5 +25,8 @@ DateTime? coerceDate(dynamic value) {
   if (value is Timestamp) return value.toDate();
   if (value is DateTime) return value;
   if (value is num) return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+  // ISO 8601, as used by the bundled seed history ("2026-05-24"). Without
+  // this the whole import silently lands on 1 Jan 1970.
+  if (value is String) return DateTime.tryParse(value.trim());
   return null;
 }

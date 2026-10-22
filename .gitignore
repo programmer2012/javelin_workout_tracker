@@ -42,3 +42,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Service-account keys for tools/import_plan.py — never commit these.
+tools/*.json
+firebase-debug.log
+
+# A real athlete's training data — keep it out of the repo.
+info_jav_tom/
+assets/seed/*.json

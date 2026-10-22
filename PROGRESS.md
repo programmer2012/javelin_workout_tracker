@@ -5,8 +5,8 @@ review of the whole app; the work since then has been, in order: make the
 core tracking loops correct, get the app building on Android again, close the
 gaps the review found, and build the Coach's Zone.
 
-**Status: all work is verified but uncommitted, and two things are not yet
-live.** See [Outstanding actions](#outstanding-actions).
+**Status: built, verified, installed and deployed.** The only step left is
+pushing the branch to GitHub. See [Outstanding actions](#outstanding-actions).
 
 | Check | Result |
 |---|---|
@@ -14,9 +14,10 @@ live.** See [Outstanding actions](#outstanding-actions).
 | `flutter test` | **47 passing** (was 7 passing, 1 failing) |
 | `flutter build apk --debug` | **succeeds** |
 | `flutter build web` | **succeeds** |
-| Firestore / Storage rules deployed | **No — action required** |
-| New build installed on device | **No — blocked by Samsung Auto Blocker** |
-| Committed to git | **No** — last commit is still `b2ad32c` |
+| Firestore rules deployed | **Yes** |
+| New build installed on device | **Yes** — SM G996B |
+| Committed to git | **Yes** — `7f0d96f` on `feat/tracking-charts-coaching` |
+| Pushed to GitHub | **No** — local branch only |
 
 ---
 
@@ -246,39 +247,37 @@ content-type fix.
 
 ## Outstanding actions
 
-### 1. Deploy the security rules
+### 1. Push the branch to GitHub
 
-Nothing is live yet, so the backend still runs whatever the console has.
-**Coaching will not work until this runs** — the athlete list and workout
-reads will be permission-denied.
-
-```bash
-firebase deploy --only firestore:rules
-```
-
-The rules changed meaningfully when coaching was added — they now permit
-cross-user reads for the first time. Worth reading before deploying.
-
-Deploy the storage rules **only after** the new build is on the device, since
-they require the `image/*` content type that only the new build sends:
+The commit exists locally only. `main` and `origin/main` are both still on
+`b2ad32c`, which is why GitHub shows nothing new.
 
 ```bash
-firebase deploy --only storage
+git push -u origin feat/tracking-charts-coaching
 ```
 
-### 2. Install the new build
+Must be run interactively: Git Credential Manager needs to show its login
+window, and the SSH keys on this machine are not registered with GitHub.
 
-Blocked by the device, not the code — `INSTALL_FAILED_VERIFICATION_FAILURE`.
-On the phone: Settings → Security and privacy → **Auto Blocker** → off, and
-Developer options → **Verify apps over USB** → off. Then:
+### 2. Functional check of coaching
 
-```bash
-flutter install --debug -d RFCR60G1VBA
-```
+The rules are deployed, so the Coach's Zone should now load instead of
+erroring. **Testing the full flow needs a second account** — redeeming your
+own code is deliberately rejected ("That is your own coach code").
 
-### 3. Commit
+Solo, you can still confirm: *Create my code* returns a six-character code,
+and *Your athletes* shows its empty-state hint rather than an error.
 
-All of the above is uncommitted; the last commit is `b2ad32c`.
+---
+
+## Done since this document was first written
+
+- Firestore rules deployed (after a `firebase login --reauth` — the stored
+  refresh token had expired, which surfaced as a 401).
+- New build installed on the SM G996B. The install uninstalls the old
+  version, so the app signs out; all data is in Firestore.
+- Committed as `7f0d96f` on `feat/tracking-charts-coaching`, 57 files,
+  +5261/−2249. Working tree clean.
 
 ---
 

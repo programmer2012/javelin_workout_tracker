@@ -88,6 +88,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - lib/images/
+    # Test history parsed from Testblatt_Tom.xlsx, imported once per account.
+    - assets/seed/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

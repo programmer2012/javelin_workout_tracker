@@ -25,6 +25,7 @@ class _ProgressPageState extends State<ProgressPage> {
   /// `null` means body weight; otherwise the exercise name being plotted.
   String? _exercise;
   ExerciseMetric _metric = ExerciseMetric.heaviestWeight;
+  ChartRange _range = ChartRange.all;
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +37,11 @@ class _ProgressPageState extends State<ProgressPage> {
         ? _exercise
         : null;
 
-    final points = selected == null
+    final allPoints = selected == null
         ? weightPoints(_repository.weightHistoryFrom(widget.userData))
         : progressionFor(widget.workouts, selected, _metric);
 
+    final points = pointsInRange(allPoints, _range);
     final unit = selected == null ? 'kg' : _metric.unit;
 
     return Scaffold(
@@ -66,13 +68,19 @@ class _ProgressPageState extends State<ProgressPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPickers(names, selected),
+                    const SizedBox(height: 8),
+                    _buildRangePicker(allPoints),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 260,
                       child: ProgressChart(
                         points: points,
                         unit: unit,
-                        emptyMessage: _emptyMessage(selected, names),
+                        emptyMessage: _emptyMessage(
+                          selected,
+                          names,
+                          hasOlderData: allPoints.isNotEmpty,
+                        ),
                       ),
                     ),
                   ],
@@ -148,7 +156,35 @@ class _ProgressPageState extends State<ProgressPage> {
     );
   }
 
-  String _emptyMessage(String? selected, List<String> names) {
+  Widget _buildRangePicker(List<ChartPoint> allPoints) {
+    return Wrap(
+      spacing: 6,
+      children: [
+        for (final range in ChartRange.values)
+          ChoiceChip(
+            label: Text(range.label),
+            labelStyle: const TextStyle(fontSize: 12),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            selected: _range == range,
+            onSelected: (_) => setState(() => _range = range),
+          ),
+      ],
+    );
+  }
+
+  String _emptyMessage(
+    String? selected,
+    List<String> names, {
+    bool hasOlderData = false,
+  }) {
+    // Distinguish "nothing logged" from "nothing in this window", otherwise
+    // narrowing the range looks like the data was lost.
+    if (hasOlderData) {
+      return 'Nothing in the last ${_range.label}. '
+          'Pick a longer range to see earlier entries.';
+    }
+
     if (selected != null) {
       return 'No ${_metric.label.toLowerCase()} recorded for $selected yet.';
     }
